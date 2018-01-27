@@ -1,0 +1,35 @@
+#!/bin/bash
+
+load_driver() {
+	[ -r /dev/mydrv ] || sudo mknod -m 666 /dev/mydrv c 250 0
+	sudo insmod my_ioctl.ko
+}
+
+remove_driver() {
+	sudo rmmod my_ioctl
+	sudo rm -f /dev/mydrv
+}
+
+case "$1" in
+
+	start)
+		load_driver
+		;;
+
+	stop)
+		remove_driver
+		;;
+
+	restart)
+		remove_driver
+		load_driver
+		;;
+
+	*)
+		echo  "Usage: $0 {start|stop|restart}"
+		exit 1
+		;;
+
+esac
+
+exit $?

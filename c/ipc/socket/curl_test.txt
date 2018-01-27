@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <curl/curl.h>
+
+#define KEY_MAC		"mac"
+#define KEY_IP		"ip"
+#define KEY_PORT	"port"
+#define	KEY_STATUS	"status"
+#define POST_PATH 	"?object=device&action=update"
+
+
+#define SERVER_IP 			"10.0.0.4"
+#define SERVER_PORT 		80
+#define DEVICE_IP			"10.0.0.100"
+#define DEVICE_PORT			2048
+#define DEVICE_MAC			"00:1c:42:9f:72:9f"
+
+#define RESPONSE_FILE 		"response.txt"
+
+typedef struct {
+	CURL 		*p_curl;
+} Context;
+
+int  ctx_init(Context *p_ctx);
+void ctx_deinit(Context *p_ctx);
+void device_udpate(Context *p_ctx, const char *server_ip, int server_port, const char *mac, const char *ip, int port, int status);
+static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream);
+
+void test_case_1(Context *p_ctx);
+
+void main() {
+	Context ctx;
+
+	if (ctx_init(&ctx) < 0) {
+		printf("init ctx failure\n");
+		return ;
+	}
+
+	test_case_1(&ctx);
+
+	ctx_deinit(&ctx);
+}
+
+int ctx_init(Context *p_ctx) {
+	p_ctx->p_curl = curl_easy_init();
+
+	return ;
+}
+
+void ctx_deinit(Context *p_ctx) {
+	curl_easy_cleanup(p_ctx->p_curl);
+}
+
+void device_udpate(Context *p_ctx, const char *server_ip, int server_port, const char *mac, const char *ip, int port, int status) {
+	char buf[512];
+	char *p_str = buf;
+
+	int len = sprintf(p_str, "http://%s:%d%s", server_ip, server_port, POST_PATH);
+	p_str = p_str + len;
+
+	if (mac) {
+		len = sprintf(p_str, "&mac=%s", mac);
+		p_str += len;
+	}
+
+	if (ip) {
+		len = sprintf(p_str, "&ip=%s", ip);
+		p_str += len;
+	}
+
+	if (port > 0) {
+		len = sprintf(p_str, "&port=%d", port);
+		p_str += len;
+	}
+
+	if (status >= 0) {
+		len = sprintf(p_str, "&status=%d", status);
+		p_str += len;
+	}
+
+
+	curl_easy_setopt(p_ctx->p_curl, CURLOPT_URL, buf);
+	curl_easy_setopt(p_ctx->p_curl, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(p_ctx->p_curl, CURLOPT_WRITEDATA, RESPONSE_FILE);
+
+	CURLcode res = curl_easy_perform(p_ctx->p_curl);
+	if (res == CURLE_OK) {
+		printf("curl success: %s \n", buf);
+	} else {
+		printf("curl failure: %s\n", buf);
+	}
+}
+
+// for receive response
+static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
+    int len = size * nmemb;
+    int written = len;
+    FILE *fp = NULL;
+    if (access((char*) stream, 0) == -1) {
+        fp = fopen((char*) stream, "wb");
+    } else {
+        fp = fopen((char*) stream, "ab");
+    }
+    if (fp) {
+        fwrite(ptr, size, nmemb, fp);
+    }
+    // printf("%s\n",ptr);
+    fclose(fp);
+    return written;
+}
+
+void test_case_1(Context *p_ctx) {
+	int status = 0;
+	device_udpate(p_ctx, SERVER_IP, SERVER_PORT, DEVICE_MAC, DEVICE_IP, DEVICE_PORT, status);
+}
