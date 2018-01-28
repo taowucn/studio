@@ -52,7 +52,8 @@ void get_string(char **p)
 int main (int argc, char **argv)
 {
   const char str[10]="abcdefg";
-  char *dst = (char *)malloc(10*sizeof(char));
+  char* restrict dst = (char *)malloc(10*sizeof(char));
+
   char s[16]="123456789";
   char d[]="123";
   char c[2]={'1','2'};
