@@ -20,7 +20,7 @@ void demo_const_cast(void)
   b0.num = 100;
   const B b1 = b0;
   cout << "b0.num=" << b0.num << ", b1.num=" << b1.num << endl;
-  //b1.num = 200; comile will failed
+  //b1.num = 200; compile will failed
   const_cast<B&>(b1).num = 200;
   cout << "b0.num=" << b0.num << ", b1.num=" << b1.num << endl;
 }

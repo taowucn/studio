@@ -5,13 +5,14 @@ using namespace std;
 class Base
 {
   public:
-    virtual void FunA() { cout << "This is A" << endl;}
+    virtual void FunA() { cout << "Base: This is A" << endl;}
 };
 
 class Derived : public Base
 {
   public:
-    virtual void FunB() { cout << "This is B" << endl;}
+    virtual void FunA() { cout << "Derived: This is A" << endl;}
+    virtual void FunB() { cout << "Derived: This is B" << endl;}
 };
 
 void FunC(Base *p)
@@ -41,8 +42,11 @@ int main (int argc, char ** argv)
   cout << typeid(*bp).name() << ", " << typeid(bp).name() << endl;
   FunC(bp);
   FunD(bp);
+  bp->FunA();
+
   Base *bbp = new Base();
   FunC(bbp);
   FunD(bbp);
+  bbp->FunA();
   return 0;
 }
