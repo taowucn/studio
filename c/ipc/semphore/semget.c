@@ -2,19 +2,24 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/sem.h>
-main()
+
+int main(int argc, char *argv[])
 {
-    int semid;
+    int semid = 0;
     key_t semkey;
-    if((semkey = ftok("/etc/profile",1)) < 0)
-    {
+
+    semkey = ftok("/etc/profile", 1);
+    if (semkey < 0) {
         perror("ftok");
-        exit(1);
+        return -1;
     }
-    if((semid = semget(semkey,1,IPC_CREAT|0666)) < 0)//创建包含信号量的信号集，权限666，信号量集中的信号量数目是1个
-    {
+
+    semid = semget(semkey, 1, IPC_CREAT | 0666);
+    if (semid < 0) {
         perror("semget");
-        exit(1);
+        return -1;
     }
-    printf("semid=%d\n",semid);
+    printf("semid = %d\n", semid);
+
+    return 0;
 }

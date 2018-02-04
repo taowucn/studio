@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #define BUFSIZE 1024
 
-int main()
+int main(int argc, char *argv[])
 {
 	FILE *fp;
 	char *cmd="ps -aux";
