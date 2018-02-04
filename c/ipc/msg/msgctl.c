@@ -10,48 +10,49 @@ typedef struct
 {
     long int nType;
     char szText[256];
-}MSG;
+} MSG;
 
-main()
+int main(int argc, char *argv[])
 {
     key_t lKey;
     int n,nMsgId;
     MSG msg;
     struct msqid_ds qds;
-    if((lKey = ftok("/etc/profile",1)) == -1)
-    {
+
+    lKey = ftok("/etc/profile", 1);
+    if (lKey < 0) {
         perror("ftok");
-        exit(1);
+        return -1;
     }
-    if((nMsgId = msgget(lKey,0)) == -1)
-    {
+
+    nMsgId = msgget(lKey, 0);
+    if (nMsgId < 0) {
         perror("ftok");
-        exit(2);
+        return -1;
     }
-    memset(&qds,0x00,sizeof(struct msqid_ds));
-    if(msgctl(nMsgId,IPC_STAT,&qds) < 0)//获取消息队列属性，获取状态放pds中
-    {
+
+    memset(&qds, 0, sizeof(struct msqid_ds));
+    if (msgctl(nMsgId, IPC_STAT, &qds) < 0) {
         perror("msgctl IPC_STAT");
-        exit(3);
+        return -1;
     }
-    printf("msg_perm.mode=%d\n",qds.msg_perm.mode);
-    //qds.msg_perm.mode &= (~0222);//去除消息队列的写权限
-    if(msgctl(nMsgId,IPC_SET,&qds) < 0)//设置消息队列权限
-    {
+    printf("msg_perm.mode=%d\n", qds.msg_perm.mode);
+    if (msgctl(nMsgId, IPC_SET, &qds) < 0) {
         perror("msgctl IPC_SET");
-        exit(4);
+        return -1;
     }
-    memset(&msg,0x00,sizeof(MSG));
+
+    memset(&msg, 0x0, sizeof(MSG));
     msg.nType = 2;
-    memcpy(msg.szText,"12345",5);
-    if(msgsnd(nMsgId,(void *)&msg,5,0) < 0)//发送消息
-    {
+    memcpy(msg.szText, "12345", 5);
+    if (msgsnd(nMsgId, (void *)&msg, 5, 0) < 0) {
         perror("msgsnd");
     }
-    if(msgctl(nMsgId,IPC_RMID,NULL) < 0)//删除消息
-    {
+
+    if (msgctl(nMsgId, IPC_RMID, NULL) < 0) {
         perror("msgctl IPC_RMID");
-        exit(5);
+        return -1;
     }
+
     return 0;
 }

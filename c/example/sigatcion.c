@@ -5,10 +5,10 @@
 
 void my_func(int signum)
 {
-	printf("if you want quit ,please send QUIT!\n");
+	printf("if you want quit, please send QUIT!\n");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 	sigset_t sig1,sig2;
 	struct sigaction act1,act2;
@@ -36,14 +36,14 @@ int main()
 	}
 
 	while(1) {
-		if (sigismember(&sig1,SIGINT)) {
+		if (sigismember(&sig1, SIGINT)) {
 			sigemptyset(&act1.sa_mask);
-			act1.sa_handler=my_func;
+			act1.sa_handler = my_func;
 			sigaction(SIGINT,&act1,NULL);
-		} else if (sigismember(&sig1,SIGQUIT)) {
+		} else if (sigismember(&sig1, SIGQUIT)) {
 			sigemptyset(&act2.sa_mask);
-			act2.sa_handler=SIG_DFL;
-			sigaction(SIGQUIT,&act2,NULL);
+			act2.sa_handler = SIG_DFL;
+			sigaction(SIGQUIT, &act2, NULL);
 		}
 	}
 }

@@ -28,8 +28,7 @@ int main(int argc, char *argv)
         exit(2);
     }
     semctl_arg.val = 2;
-    if (semctl(semid,0,SETVAL,semctl_arg) < 0)ʼֵ
-    {
+    if (semctl(semid,0,SETVAL,semctl_arg) < 0) {
         perror("semctl");
         exit(3);
     }

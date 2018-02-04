@@ -5,35 +5,38 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <string.h>
+
 typedef struct
 {
     long int nType;
     char szText[256];
-}MSG;
+} MSG;
 
-main()
+int main(int argc, char *argv[])
 {
     key_t lKey;
     int n,nMsgId;
     MSG msg;
-    if((lKey = ftok("/etc/profile",1)) == -1)
-    {
+
+    lKey = ftok("/etc/profile", 1);
+    if (lKey < 0) {
         perror("ftok");
-        exit(1);
+        return -1;
     }
-    if((nMsgId = msgget(lKey,0)) == -1)
-    {
+
+    nMsgId = msgget(lKey, 0);
+    if (nMsgId < 0) {
         perror("ftok");
-        exit(2);
+        return -1;
     }
-    memset(&msg,0x00,sizeof(MSG));
-    if((n = msgrcv(nMsgId,(void *)&msg,sizeof(msg.szText),2L,0)) < 0)//从队列接收消息，读出以后就不存在了
-    {
+
+    memset(&msg, 0x0, sizeof(MSG));
+    n = msgrcv(nMsgId, (void *)&msg, sizeof(msg.szText), 2, 0);
+    if(n < 0) {
         perror("msgrcv");
+    } else {
+        printf("msgrcv return length=[%d] text=[%s]\n",n,msg.szText);
     }
-    else
-    {
-        printf("msgrcv return length=[%d] text=[%s]\n",n,msg.szText);//输出
-    }
+
     return 0;
 }

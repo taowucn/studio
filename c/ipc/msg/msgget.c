@@ -9,25 +9,26 @@ int main(int argc, char **argv)
 {
     key_t lKey;
     int nMsgId;
-    if((lKey = ftok("/etc/profile",1)) == -1)
-    {
+
+    lKey = ftok("/etc/profile", 1);
+    if (lKey < 0) {
         perror("ftok");
-        exit(1);
+        return -1;
     }
-	//带参数IPC_CREAT和IPC_EXCL，如果队列不存在则创建队列，已存在则返回EEXIST
-    if((nMsgId = msgget(lKey,IPC_CREAT|IPC_EXCL|0666)) == -1)
-    {
-        if(errno != EEXIST)//创建失败且不是由于队列已存在
-        {
+
+    nMsgId = msgget(lKey, IPC_CREAT | IPC_EXCL | 0666);
+    if (nMsgId < 0) {
+        if (errno != EEXIST) {
             perror("msgget");
-            exit(2);
+            return -1;
         }
-        if((nMsgId = msgget(lKey,0)) == -1)//已存在
-        {
+        nMsgId = msgget(lKey, 0);
+        if (nMsgId < 0) {
             perror("msgget");
-            exit(3);
+            return -1;
         }
     }
-    printf("MsgID=%d\n",nMsgId);
+
+    printf("MsgID=%d\n", nMsgId);
     return 0;
 }
