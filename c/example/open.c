@@ -5,44 +5,45 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
-int main()
+
+int main(int argc, char *argv[])
 {
-	int fd,len,size;
-	char *buf="hello wto";
-	char buf_read[10];
-	buf_read[10]='\0';
-	len=strlen(buf);
-	if((fd=open("/tmp/open.log",O_CREAT | O_RDWR | O_TRUNC ,0666))<0)
-	{
+	int fd, len, size;
+	char *buf = "hello wto";
+	char buf_read[10] = {0};
+
+	len = strlen(buf);
+	fd = open("/tmp/open.log", O_CREAT | O_RDWR | O_TRUNC, 0666);
+	if(fd < 0) {
 		perror("open");
-		exit(1);
-	}
-	else
-		printf("open %d file sucessed \n",fd);
-	if((size=write(fd,buf,len))<0)
-	{
-		perror("write");
-		exit(1);
-	}
-	else
-		printf("sucess write :%s ;in file\n",buf);
-	lseek(fd,0,SEEK_SET);
-	if((size=read(fd,buf_read,10)),0)
-	{
-		perror("read");
-		exit(1);
-	}
-	else
-	{
-		printf("read %d num char from file ,string is %s\n",size,buf_read);
+		return -1;
+	} else {
+		printf("open %d file sucessed\n", fd);
 	}
 
-	if(close(fd)<0)
-	{
-		perror("close");
-		exit(1);
+	do {
+		size = write(fd, buf, len);
+		if (size < 0) {
+			perror("write");
+			break;
+		} else {
+			printf("sucess write: %s\n", buf);
+		}
+
+		lseek(fd,0,SEEK_SET);
+		size = read(fd,buf_read,10);
+		if (size < 0) {
+			perror("read");
+			break;
+		} else {
+			printf("read %d byte from file: %s\n", size, buf_read);
+		}
+	} while (0);
+
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
 	}
-	else
-		printf("sucess close file\n");
-	exit(0);
+
+	return 0;
 }

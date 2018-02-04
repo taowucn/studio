@@ -2,16 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	if(fork()==0)
-	{
-		if(execlp("ps","ps","-ef",NULL)<0)
-			{
-				perror("execlp error!");
-			}
-
+	if (fork() == 0) {
+		if (execlp("ps", "ps", "-ef", NULL) < 0) {
+			perror("execlp");
+			return -1;
+		}
 	}
-	return 0;
 
+	return 0;
 }

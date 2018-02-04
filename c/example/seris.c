@@ -19,8 +19,7 @@ int set_opt(int fd,int nSpeed, int nBits, char nEvent, int nStop)
 	newtio.c_cflag  |=  CLOCAL | CREAD;
 	newtio.c_cflag &= ~CSIZE;
 
-	switch( nBits )
-	{
+	switch( nBits ) {
 	case 7:
 		newtio.c_cflag |= CS7;
 		break;
@@ -29,8 +28,7 @@ int set_opt(int fd,int nSpeed, int nBits, char nEvent, int nStop)
 		break;
 	}
 
-	switch( nEvent )
-	{
+	switch( nEvent ) {
 	case 'O':
 		newtio.c_cflag |= PARENB;
 		newtio.c_cflag |= PARODD;
@@ -46,8 +44,7 @@ int set_opt(int fd,int nSpeed, int nBits, char nEvent, int nStop)
 		break;
 	}
 
-switch( nSpeed )
-	{
+	switch( nSpeed) {
 	case 2400:
 		cfsetispeed(&newtio, B2400);
 		cfsetospeed(&newtio, B2400);
@@ -69,84 +66,90 @@ switch( nSpeed )
 		cfsetospeed(&newtio, B9600);
 		break;
 	}
-	if( nStop == 1 )
-		newtio.c_cflag &=  ~CSTOPB;
-	else if ( nStop == 2 )
-	newtio.c_cflag |=  CSTOPB;
+
+	if( nStop == 1 ) {
+		newtio.c_cflag &= ~CSTOPB;
+	} else if ( nStop == 2 ) {
+		newtio.c_cflag |=  CSTOPB;
+	}
 	newtio.c_cc[VTIME]  = 0;
 	newtio.c_cc[VMIN] = 0;
 	tcflush(fd,TCIFLUSH);
-	if((tcsetattr(fd,TCSANOW,&newtio))!=0)
-	{
+	if ((tcsetattr(fd,TCSANOW,&newtio)) != 0) {
 		perror("com set error");
 		return -1;
 	}
+
 	printf("set done!\n");
 	return 0;
 }
 
-int open_port(int fd,int comport)
+int open_port(int fd, int comport)
 {
 	char *dev[]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2"};
 	long  vdisable;
-	if (comport==1)
-	{	fd = open( "/dev/ttyS0", O_RDWR|O_NOCTTY|O_NDELAY);
-		if (-1 == fd){
+	if (comport == 1) {
+		fd = open( "/dev/ttyS0", O_RDWR| O_NOCTTY| O_NDELAY);
+		if (-1 == fd) {
 			perror("Can't Open Serial Port");
-			return(-1);
-		}
-		else
+			return -1;
+		} else {
 			printf("open ttyS0 .....\n");
-	}
-	else if(comport==2)
-	{	fd = open( "/dev/ttyS1", O_RDWR|O_NOCTTY|O_NDELAY);
+		}
+	} else if(comport == 2) {
+		fd = open("/dev/ttyS1", O_RDWR| O_NOCTTY| O_NDELAY);
 		if (-1 == fd){
 			perror("Can't Open Serial Port");
 			return(-1);
-		}
-		else
+		} else {
 			printf("open ttyS1 .....\n");
-	}
-	else if (comport==3)
-	{
-		fd = open( "/dev/ttyS2", O_RDWR|O_NOCTTY|O_NDELAY);
-		if (-1 == fd){
-			perror("Can't Open Serial Port");
-			return(-1);
 		}
-		else
+	} else if (comport == 3) {
+		fd = open( "/dev/ttyS2", O_RDWR|O_NOCTTY|O_NDELAY);
+		if (-1 == fd) {
+			perror("Can't Open Serial Port");
+			return -1;
+		} else {
 			printf("open ttyS2 .....\n");
+		}
 	}
-	if(fcntl(fd, F_SETFL, 0)<0)
+	if (fcntl(fd, F_SETFL, 0) < 0) {
 		printf("fcntl failed!\n");
-	else
+	} else {
 		printf("fcntl=%d\n",fcntl(fd, F_SETFL,0));
-	if(isatty(STDIN_FILENO)==0)
+	}
+
+	if (isatty(STDIN_FILENO) == 0) {
 		printf("standard input is not a terminal device\n");
-	else
+	} else {
 		printf("isatty success!\n");
+	}
 	printf("fd-open=%d\n",fd);
 	return fd;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	int fd;
-	int nread,i;
-	char buff[]="Hello\n";
+	int fd = 0;
+	int nread, i = 0;
+	char buff[] = "Hello\n";
 
-	if((fd=open_port(fd,1))<0){
+	fd = open_port(fd, 1);
+	if (fd < 0) {
 		perror("open_port error");
-		return;
+		return -1;
 	}
-	if((i=set_opt(fd,115200,8,'N',1))<0){
+
+	i = set_opt(fd, 115200, 8, 'N', 1);
+	if (i < 0) {
 		perror("set_opt error");
-		return;
+		return -1;
 	}
-	printf("fd=%d\n",fd);
-//	fd=3;
-	nread=read(fd,buff,8);
-	printf("nread=%d,%s\n",nread,buff);
+
+	printf("fd=%d\n", fd);
+	nread = read(fd, buff, 8);
+	printf("nread=%d,%s\n", nread, buff);
 	close(fd);
-	return;
+
+	return 0;
 }

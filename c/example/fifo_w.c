@@ -6,28 +6,39 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#define FIFO_SVR "/tmp/myfifo"
 
-main(int argc,char *argv[])
+#define FIFO "/tmp/myfifo"
+
+int main(int argc, char *argv[])
 {
-	int fd;
-	int nwrite;
-	char buf_w[100];
-	if(fd==-1)
-		if(errno==ENXIO)
-			printf("open error:no read process!\n");
-	fd=open(FIFO_SVR,O_WRONLY | O_NONBLOCK,0);
-	if(argc==1)
+	int fd = 0;
+	int nwrite = 0;
+	char buf_w[100] = {0};
+
+	if (argc == 1) {
 		printf("please send something\n");
-	strcpy(buf_w,argv[1]);
-	if((nwrite=write(fd,buf_w,100)==-1))
-	{
-		if(errno==EAGAIN)
-			printf("the fifo has not been read yet\n");
+		return -1;
 	}
-	else
-		printf("write %s to fifo",buf_w);
 
+	if((mkfifo(FIFO, 0644) < 0 )) {
+		perror("mkfifo");
+		return -1;
+	}
+	printf("Create FIFO OK\n");
 
+	strncpy(buf_w, argv[1], sizeof(buf_w));
+	fd = open(FIFO, O_WRONLY, 0777);
+	nwrite = write(fd, buf_w, strlen(buf_w));
+	if (nwrite < 0) {
+		if (errno == EAGAIN) {
+			printf("the fifo has not been read yet\n");
+			return -1;
+		}
+	} else {
+		printf("write %s to fifo ok\n", buf_w);
+	}
+	unlink(FIFO);
+
+	return 0;
 }
 

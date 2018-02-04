@@ -7,17 +7,19 @@
 int main()
 {
 	FILE *fp;
-	char *cmd="ps -ef";
+	char *cmd="ps -aux";
 	char buf[BUFSIZE];
-	fp=popen(cmd,"r");
-	if(fp==NULL)
-	{
+
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
 		perror("popen");
+		return -1;
 	}
-	while((fgets(buf,BUFSIZE,fp))!=NULL)
-	{
+
+	while ((fgets(buf, BUFSIZE, fp)) != NULL) {
 		printf("%s",buf);
 	}
+
 	pclose(fp);
 	return 0;
 }

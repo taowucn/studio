@@ -5,7 +5,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-main()
+int main(int argc, char **argv)
 {
     key_t lKey;
     int nMsgId;

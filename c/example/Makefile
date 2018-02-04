@@ -10,7 +10,7 @@ OBJ = $(subst .c,.o,$(SRC))
 all: $(OBJ)
 
 $(OBJ): %.o : %.c
-	$(MAKEVV)$(CC) $(FLAG) $< -o $@
+	$(MAKEVV)$(CC) $< -o $@ $(FLAG)
 
 clean : 
 	rm -f *.o

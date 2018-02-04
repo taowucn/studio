@@ -12,51 +12,45 @@ struct message
 	long mtype;
 	char mtext[MSGSIZE];
 };
-int main()
+
+int main(int argc, char *argv[])
 {
-	int qid,len;
+	int qid = 0, len = 0;
 	key_t key;
 	struct message msg;
 
-	if((key=ftok(".",'a')==-1))
-	{
+	if ((key = ftok(".", 'a') < 0)) {
 		perror("ftok");
-		exit(1);
+		return -1;
 	}
-	if(qid=msgget(key,IPC_PRIVATE)==-1)
-	{
+	qid = msgget(key, 0666 | IPC_CREAT);
+	if (qid < 0) {
 		perror("msgget");
-		exit(1);
+		return -1;
+	} else {
+		printf("open a queue %d\n", qid);
 	}
-	else
-		printf("open a queue %d \n",qid);
-	puts("please enter you message to queue:");
-	if(fgets(msg.mtext,MSGSIZE,stdin)==NULL)
-	{
-		perror("fgets");
-		exit(1);
-	}
-	else
-	{
-		msg.mtype=getpid();
-		//msg_rcv.mtype=getpid();
-		len=strlen(msg.mtext);
-	}
-	if(msgsnd(qid,&msg,len,0)<0)
-	{
-		perror("msgsnd");
-		exit(1);
-	}
-	if(msgrcv(qid,&msg,MSGSIZE,0,0)<0)
-	{
-		perror("msgrcv");
-		exit(1);
-	}
-	printf("you send message is :%s \n",msg.mtext);
-	if(msgctl(qid,IPC_RMID,NULL)<0)
-	{
+
+	memset(msg.mtext, 0, sizeof(msg.mtext));
+	strncpy(msg.mtext, "hi, msg Q", sizeof(msg.mtext));
+	msg.mtype = getpid();
+	len = strlen(msg.mtext);
+
+	do {
+		if (msgsnd(qid, &msg, len, 0) < 0) {
+			perror("msgsnd");
+			break;
+		}
+		if (msgrcv(qid, &msg, MSGSIZE, 0, 0) < 0) {
+			perror("msgrcv");
+			break;
+		}
+	} while(0);
+
+	printf("you send message is :%s \n", msg.mtext);
+	if (msgctl(qid, IPC_RMID, NULL) < 0) {
 		perror("msgctl");
-		exit(1);
 	}
-	exit(0);
+
+	return 0;
 }
