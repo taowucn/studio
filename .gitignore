@@ -231,3 +231,6 @@ pip-log.txt
 
 #CMake
 build
+*.so*
+*.a
+

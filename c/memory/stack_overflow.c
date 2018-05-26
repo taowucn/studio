@@ -5,6 +5,13 @@
 int main()
 {
   char str[2];
+
+#ifdef STACK_MEM_FREE
+  /* Segament fault after free */
+  char buf[4];
+  free(buf);
+#endif
+
   strcpy(str, "taowuAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
   printf("sizeof=%d, strlen=%d, str=%s\n",sizeof(str), strlen(str), str);
 
