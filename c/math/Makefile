@@ -1,6 +1,6 @@
 CC = gcc
 MAKEVV = @
-FLAG = -lm
+FLAG = -lm -static
 
 .PHONY: all  clean
 
