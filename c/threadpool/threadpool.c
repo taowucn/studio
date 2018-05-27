@@ -59,8 +59,9 @@ void* thread_routine(void* arg)
 		if (pool->quit && NULL==pool->first) {
 			pool->threadcnt--;
 			if(0 == pool->threadcnt)
-			cond_signal(&pool->ready);
+				cond_signal(&pool->ready);
 			cond_unlock(&pool->ready);//do not forget unlock when breaking out the loop
+			printf("The destroy of thread pool\n");
 			break;
 		}
 
@@ -68,6 +69,7 @@ void* thread_routine(void* arg)
 		if (timedout && NULL==pool->first) {
 			pool->threadcnt--;
 			cond_unlock(&pool->ready);//do not forget unlock when breaking out the loop
+			printf("wait timeout\n");
 			break;
 		}
 		cond_unlock(&pool->ready);
