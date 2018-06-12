@@ -1,5 +1,5 @@
 
-project( Surf )
+project( SurfPoint )
 find_package( OpenCV REQUIRED )
-add_executable(Surf Surf)
-target_link_libraries( Surf ${OpenCV_LIBS} )
+add_executable(SurfPoint SurfPoint)
+target_link_libraries( SurfPoint ${OpenCV_LIBS} )
