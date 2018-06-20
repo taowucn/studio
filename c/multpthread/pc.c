@@ -8,69 +8,61 @@
 struct Products
 {
 	int buffer[BUFFER_SIZE];
-	pthread_mutex_t locker;           //保证存取操作的原子性 互斥性
-	pthread_cond_t notEmpty; //是否可读
-	pthread_cond_t notFull;          //是否可写
+	pthread_mutex_t locker;
+	pthread_cond_t notEmpty;
+	pthread_cond_t notFull;
 	int posReadFrom;
 	int posWriteTo;
 };
 
 int BufferIsFull(struct Products* products)
 {
-	if ((products->posWriteTo + 1) % BUFFER_SIZE == products->posReadFrom)
-	{
-		return (1);
+	if((products->posWriteTo + 1) % BUFFER_SIZE == products->posReadFrom) {
+		return 1;
 	}
-	return (0);
+	return 0;
 }
 
-int BufferIsEmpty(struct Products* products)
+int BufferIsEmpty(struct Products *products)
 {
-	if (products->posWriteTo == products->posReadFrom)
-	{
-		return (1);
+	if (products->posWriteTo == products->posReadFrom) {
+		return 1;
 	}
-	return (0);
+	return 0;
 }
 
-//制造产品。
-
-void Produce(struct Products* products, int item)
+void Produce(struct Products *products, int item)
 {
-	pthread_mutex_lock(&products->locker); //原子操作
+	pthread_mutex_lock(&products->locker);
 
-	while (BufferIsFull(products))
-	{
+	while (BufferIsFull(products)) {
 		pthread_cond_wait(&products->notFull, &products->locker);
-	} //无空间可写入
+	}
 
-	//写入数据
 	products->buffer[products->posWriteTo] = item;
 	products->posWriteTo++;
 
 	if (products->posWriteTo >= BUFFER_SIZE)
 		products->posWriteTo = 0;
 
-	pthread_cond_signal(&products->notEmpty);     //发信
-	pthread_mutex_unlock(&products->locker);    //解锁
+	pthread_cond_signal(&products->notEmpty);
+	pthread_mutex_unlock(&products->locker);
 }
 
-int Consume(struct Products* products)
+int Consume(struct Products *products)
 {
 	int item;
 
 	pthread_mutex_lock(&products->locker);
 
-	while (BufferIsEmpty(products))
-	{
+	while (BufferIsEmpty(products)) {
 		pthread_cond_wait(&products->notEmpty, &products->locker);
-	} //为空时持续等待,无数据可读
+	}
 
-	//提取数据
 	item = products->buffer[products->posReadFrom];
 	products->posReadFrom++;
 
-	if (products->posReadFrom >= BUFFER_SIZE) //如果到末尾,从头读取
+	if (products->posReadFrom >= BUFFER_SIZE)
 		products->posReadFrom = 0;
 
 	pthread_cond_signal(&products->notFull);
@@ -79,49 +71,43 @@ int Consume(struct Products* products)
 	return item;
 }
 
-
 #define END_FLAG (-1)
-
 struct Products products;
 
-void* ProducerThread(void* data)
+void *ProducerThread(void *data)
 {
 	int i;
-	for (i = 0; i < 16; ++i)
-	{
+	for (i = 0; i < 16; ++i) {
 		printf("producer: %d\n", i);
 		Produce(&products, i);
 	}
 	Produce(&products, END_FLAG);
-	return NULL;
 }
 
-void* ConsumerThread(void* data)
+void *ConsumerThread(void *data)
 {
 	int item;
 
-	while (1)
-	{
+	while (1) {
 		item = Consume(&products);
-		if (END_FLAG == item)
+		if (END_FLAG == item) {
+			printf("End Flag\n");
 			break;
+		}
 		printf("consumer: %d\n", item);
 	}
-	return (NULL);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	pthread_t producer;
 	pthread_t consumer;
-	int result;
 
 	pthread_create(&producer, NULL, &ProducerThread, NULL);
 	pthread_create(&consumer, NULL, &ConsumerThread, NULL);
 
-	pthread_join(producer, (void *)&result);
-	pthread_join(consumer, (void *)&result);
+	pthread_join(consumer, NULL);
+	pthread_join(producer, NULL);
 
-
-	exit(EXIT_SUCCESS);
+	return 0;
 }

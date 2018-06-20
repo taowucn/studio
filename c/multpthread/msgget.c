@@ -12,18 +12,19 @@ struct msgbuffer
 {
 	long mtype;
 	char mtext[TEXT_SIZE];
-}msgp;
+} msgp;
 
-void main()
+int main(int argc, char **argv)
 {
 	int msqid;
+
 	msqid = msgget (KEY, IPC_CREAT | 0600);
-	if ( fork() == 0){
+	if (fork() == 0) {
 		msgp.mtype = 1;
 		strcpy (msgp.mtext, "Hi, I am a children!\n");
 		msgsnd(msqid, &msgp, TEXT_SIZE , 0);
-		return ;
-	}else {
+		return 0;
+	} else {
 		sleep (3);
 		msgrcv (msqid, &msgp, TEXT_SIZE, 0, 0);
 		printf ("parent recv :%s", msgp.mtext );
