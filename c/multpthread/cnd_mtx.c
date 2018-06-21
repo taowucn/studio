@@ -16,40 +16,53 @@ static void *thread_func(void*arg)
 	pthread_mutex_unlock(&mtx);
 }
 
+static void *thread_func_send(void*arg)
+{
+	sleep(1);
+
+	pthread_mutex_lock(&mtx);
+	pthread_cond_signal(&cond);
+	printf("Signal\n");
+	pthread_mutex_unlock(&mtx);
+}
+
+
 int main(int argc, char **argv)
 {
-	pthread_t tid0;
-	pthread_t tid1;
+	pthread_t tid[4];
 	int i = 0;
 	int ret = 0;
 
 	pthread_mutex_init(&mtx, NULL);
 	pthread_cond_init(&cond, NULL);
 	do {
-		ret = pthread_create(&tid0, NULL, thread_func, NULL);
+		ret = pthread_create(&tid[0], NULL, thread_func, NULL);
 		if (ret) {
 			perror("pthrea_create");
 			break;
 		}
-		ret = pthread_create(&tid1, NULL, thread_func, NULL);
+		ret = pthread_create(&tid[1], NULL, thread_func, NULL);
 		if (ret) {
 			perror("pthrea_create");
 			break;
 		}
-		sleep(1);
+
+		ret = pthread_create(&tid[2], NULL, thread_func_send, NULL);
+		if (ret) {
+			perror("pthrea_create");
+			break;
+		}
+		ret = pthread_create(&tid[3], NULL, thread_func_send, NULL);
+		if (ret) {
+			perror("pthrea_create");
+			break;
+		}
 	} while (0);
 
-	for (i = 0; i < 2; i++) {
-		pthread_mutex_lock(&mtx);
-		pthread_cond_signal(&cond);
-		//pthread_cond_broadcast(&cond);
-		printf("Signal\n");
-		pthread_mutex_unlock(&mtx);
-		sleep(1);
+	for (i = 0; i < 4; ++i) {
+		pthread_join(tid[i], NULL);
 	}
 
-	pthread_join(tid1, NULL);
-	pthread_join(tid0, NULL);
 	printf("Main Quit\n");
 	return 0;
 }
