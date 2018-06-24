@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "so_test.h"
 
 int main()
@@ -5,5 +7,6 @@ int main()
 	test_a();
 	test_b();
 	test_c();
+
 	return 0;
 }

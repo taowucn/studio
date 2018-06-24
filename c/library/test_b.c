@@ -1,4 +1,4 @@
-#include "so_test.h"
+#include "stdio.h"
 
 void test_b()
 {
