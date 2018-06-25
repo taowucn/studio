@@ -1,6 +1,6 @@
 CC = g++
 MAKEVV = @
-FLAG = 
+FLAG = -std=c++11 -lpthread
 
 .PHONY: all  clean
 
@@ -10,7 +10,7 @@ OBJ = $(subst .cpp,.o,$(SRC))
 all: $(OBJ)
 
 $(OBJ): %.o : %.cpp
-	$(MAKEVV)$(CC) $(FLAG) $< -o $@
+	$(MAKEVV)$(CC) $< -o $@ $(FLAG)
 
 clean : 
 	rm -f *.o
