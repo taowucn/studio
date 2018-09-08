@@ -1,24 +1,39 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/mman.h>
 
-static int DATA =1024 * 1024;
+#define SIZE (4)
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
-	int fd;
-	char *start;
-	char name[120]="taowu";
-	if ((fd = open("/tmp/sda1/data", O_CREAT | O_TRUNC | O_RDWR, 0666)) < 0 ){
+	int fd = 0;
+	char *start = NULL;
+	char name[120] = "Hello, mmap";
+
+	fd = open("/tmp/mm", O_RDONLY, 0666);
+	if (fd < 0 ){
 		perror("open");
-		return ;
+		return -1;
 	}
 
-	start = mmap (NULL, DATA, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (start == MAP_FAILED)
-		return;
-	munmap(start, DATA);
-	close(fd);
+	start = mmap (NULL, SIZE, PROT_READ, MAP_SHARED, fd, 0);
+	if (start == MAP_FAILED) {
+		perror("mmap");
+		return -1;
+	} else {
+		printf("Virt addr: %p\n", start);
+		memcpy(name, start, 4);
+		printf("name: %s\n", name);
+		munmap(start, SIZE);
+	}
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
+
+	return 0;
 }
