@@ -19,19 +19,24 @@
 
 #define DEVICE_NAME "mymap"
 
+int debug_level = 0;
+module_param(debug_level, int, 0644);
+MODULE_PARM_DESC(debug_level,
+	"driver debug level, [0, 2]");
+
+#include "mmap_print.h"
+
 static unsigned char *kvirt = NULL;
 
 static void my_vm_open(struct vm_area_struct *vma)
 {
-	printk(KERN_DEBUG "%s (%d): pid: %u, virt: 0x%lx\n",
-		__func__, __LINE__, current->pid, vma->vm_start);
+	prt_debug("pid: %u, virt: 0x%lx\n", current->pid, vma->vm_start);
 	return;
 }
 
 static void my_vm_close(struct vm_area_struct *vma)
 {
-	printk(KERN_DEBUG "%s (%d): pid: %u, virt: 0x%lx\n",
-		__func__, __LINE__, current->pid, vma->vm_start);
+	prt_debug( "pid: %u, virt: 0x%lx\n", current->pid, vma->vm_start);
 	return;
 }
 
@@ -50,7 +55,7 @@ static int my_map(struct file *filp, struct vm_area_struct *vma)
 	if (remap_pfn_range(vma, start, page >> PAGE_SHIFT, size, PAGE_SHARED)) {
 		return -EFAULT;
 	} else {
-		printk(KERN_INFO "Mmap: remap_pfn_range success\n");
+		prt_info("mmap: remap_pfn_range success\n");
 		vma->vm_ops = &my_vm_ops;
 		vma->vm_private_data = kvirt;
 		my_vm_open(vma);
@@ -61,13 +66,13 @@ static int my_map(struct file *filp, struct vm_area_struct *vma)
 
 static int my_open(struct inode *inode, struct file *file)
 {
-	printk(KERN_DEBUG "%s (%d): pid: %u\n", __func__, __LINE__, current->pid);
+	prt_debug("pid: %u\n",  current->pid);
 	return 0;
 }
 
 static int my_close(struct inode *inode, struct file *file)
 {
-	printk(KERN_DEBUG "%s (%d): pid: %u\n", __func__, __LINE__, current->pid);
+	prt_debug("pid: %u\n", current->pid);
 	return 0;
 }
 
@@ -92,9 +97,9 @@ static ssize_t hwrng_attr_current_show(struct device *dev,
 
 	p = (char *)kvirt;
 	for (i = 0; i < 8; i++) {
-		printk("%d, ", *p++);
+		printk(KERN_DEBUG "%d, ", *p++);
 	}
-	printk("\n");
+	printk(KERN_DEBUG "\n");
 
 	return 0;
 }
@@ -114,7 +119,7 @@ static int __init dev_init(void)
 
 		kvirt = (unsigned char *)kmalloc(PAGE_SIZE, GFP_KERNEL);
 		if (kvirt == NULL) {
-			printk(KERN_ERR "kmalloc err\n");
+			prt_err("kmalloc err\n");
 			ret = -1;
 			break;
 		}
@@ -122,12 +127,12 @@ static int __init dev_init(void)
 		//SetPageReserved(virt_to_page(kvirt));
 		ret = device_create_file(misc.this_device, &dev_attr_rng_current);
 		if (ret < 0) {
-			printk(KERN_ERR "misc register err\n");
+			prt_err("misc register err\n");
 			break;
 		}
 	} while (0);
 
-	printk(KERN_DEBUG "%s (%d)\n", __func__, __LINE__);
+	prt_debug("\n");
 
 	return ret;
 }
@@ -141,7 +146,7 @@ static void __exit dev_exit(void)
 		kfree(kvirt);
 		kvirt = NULL;
 	}
-	printk(KERN_DEBUG "%s (%d)\n", __func__, __LINE__);
+	prt_debug("\n");
 }
 
 module_init(dev_init);
