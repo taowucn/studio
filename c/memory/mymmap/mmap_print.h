@@ -7,7 +7,7 @@ enum {
 	LOG_DEBUG = 2,
 };
 
-extern int debug_level;
+extern uint32_t debug_level;
 
 #define prt_err(str, arg...)	do { \
 	if (LOG_ERR <= debug_level ) {\

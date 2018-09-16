@@ -19,10 +19,9 @@
 
 #define DEVICE_NAME "mymap"
 
-int debug_level = 0;
-module_param(debug_level, int, 0644);
-MODULE_PARM_DESC(debug_level,
-	"driver debug level, [0, 2]");
+uint32_t debug_level = 0;
+module_param(debug_level, uint, 0644);
+MODULE_PARM_DESC(debug_level, "driver debug level, [0, 2]");
 
 #include "mmap_print.h"
 
