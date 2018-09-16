@@ -15,3 +15,6 @@ else
 modules-objs :=mmap.o
 obj-m := mmap.o
 endif
+
+app: 
+	gcc -o test_mm test_mm.c -lpthread
