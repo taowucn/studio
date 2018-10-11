@@ -1,6 +1,6 @@
 CC = gcc
 MAKEVV = @
-FLAG = -lpthread 
+FLAG = -lpthread -g
 
 .PHONY: all  clean
 

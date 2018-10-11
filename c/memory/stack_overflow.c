@@ -13,7 +13,7 @@ int main()
 #endif
 
   strcpy(str, "taowuAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-  printf("sizeof=%d, strlen=%d, str=%s\n",sizeof(str), strlen(str), str);
+  printf("sizeof=%ld, strlen=%ld, str=%s\n",sizeof(str), strlen(str), str);
 
   return 0;
 }
