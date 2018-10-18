@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 			rval = -1;
 			break;
 		}
-		while ((in_size -= algin_sz) > 0) {
+		while (in_size > 0) {
 			if (fread(data, 1, read_sz, in_fp) != read_sz) {
 				perror("fread");
 				rval = -1;
@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
 				rval = -1;
 				break;
 			}
+			in_size -= algin_sz;
 		}
 	}while (0);
 
