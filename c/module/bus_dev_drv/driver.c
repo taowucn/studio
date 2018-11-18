@@ -25,23 +25,26 @@ struct device_driver my_driver = {
 	.remove = my_remove,
 };
 
-static ssize_t my_driver_show(struct device_driver *driver, char *buf)
+static ssize_t my_drv_show(struct device_driver *driver, char *buf)
 {
-	return sprintf(buf, "%s\n", "This is my driver!");
-};
-static DRIVER_ATTR(drv, S_IRUGO, my_driver_show, NULL);
+	return snprintf(buf, PAGE_SIZE, "%s\n", "This is my driver!");
+}
+
+static DRIVER_ATTR_RO(my_drv);
 
 static int __init my_driver_init(void)
 {
-	int ret;
+	int ret = 0;
 
 	ret = driver_register(&my_driver);
-	if (ret)
+	if (ret) {
 		printk("driver_register failed!\n");
+	}
 
-	ret = driver_create_file(&my_driver, &driver_attr_drv);
-	if (ret)
+	ret = driver_create_file(&my_driver, &driver_attr_my_drv);
+	if (ret) {
 		printk("create_driver_file failed!\n");
+	}
 
 	return ret;
 }
@@ -55,4 +58,3 @@ module_init(my_driver_init);
 module_exit(my_driver_exit);
 MODULE_AUTHOR("TaoWu");
 MODULE_LICENSE("GPL");
-

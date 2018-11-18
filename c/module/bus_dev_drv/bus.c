@@ -11,20 +11,22 @@ static int my_match(struct device *dev, struct device_driver *driver)
 	return !strncmp(dev->init_name, driver->name, strlen(driver->name));
 }
 
-//static int my_bus_release(struct device *dev)
-//{
-//	return 0;
-//}
+#if 0
+static int my_bus_release(struct device *dev)
+{
+	return 0;
+}
+#endif
 
 static ssize_t show_bus_version(struct bus_type *bus, char *buf)
 {
-	return sprintf(buf, "%s\n", version);
+	return snprintf(buf, PAGE_SIZE, "%s\n", version);
 }
 static BUS_ATTR(version, S_IRUGO, show_bus_version, NULL);
 
 struct device my_bus = {
 	.init_name = "my_bus0",
-//	.release = my_bus_release,
+	//.release = my_bus_release,
 };
 EXPORT_SYMBOL(my_bus);
 
@@ -36,18 +38,21 @@ EXPORT_SYMBOL(my_bus_type);
 
 static int __init my_bus_init(void)
 {
-	int ret;
+	int ret = 0;
 
 	ret = bus_register(&my_bus_type);
-	if (ret)
+	if (ret) {
 		printk("bus_register failed!\n");
+	}
 
-	if (bus_create_file(&my_bus_type, &bus_attr_version))
+	if (bus_create_file(&my_bus_type, &bus_attr_version)) {
 		printk("Creat bus failed!\n");
+	}
 
 	ret = device_register(&my_bus);
-	if (ret)
+	if (ret) {
 		printk("device_register failed!\n");
+	}
 
 	return ret;
 }
@@ -62,4 +67,3 @@ module_init(my_bus_init);
 module_exit(my_bus_exit);
 MODULE_AUTHOR("TaoWu");
 MODULE_LICENSE("GPL");
-
