@@ -2,7 +2,8 @@
 #include <unistd.h>
 #include <sys/param.h>
 #include <stdlib.h>
-main()
+
+int main(int argc, char *argv[])
 {
     int n;
     __pid_t nPid;
@@ -29,4 +30,5 @@ main()
         //exit(0);
     }
     printf("Main Exit\n");
+	return 0;
 }

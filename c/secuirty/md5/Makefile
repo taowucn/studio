@@ -1,17 +1,15 @@
-CC = gcc
-MAKEVV = @
-CFLAG = -fPIC
-PWD=$(shell pwd)
+CC 		:= gcc
+CFLAGS 	:= -fPIC
+
 .PHONY: all so app clean
 
 all: so app
 
-so: 
-	$(CC) -shared -o libmd5.so md5.c $(CFLAG)
+so:
+	$(CC) -shared -o libmd5.so md5.c $(CFLAGS)
 
 app:
-	$(CC) -o test_md5 test_md5.c -I. -L. -lmd5 
+	$(CC) -o test_md5.elf test_md5.c -I. -L. -lmd5
 
-clean : 
-	rm -f *.o *.a *.so test_md5
-
+clean:
+	rm -f *.o *.a *.so *.elf

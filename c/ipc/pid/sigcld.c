@@ -20,7 +20,7 @@ void handle_sigcld(int signo)
     }
 }
 
-main()
+int main(int argc, char *argv[])
 {
     pid_t pid;
     signal(SIGCLD,handle_sigcld);

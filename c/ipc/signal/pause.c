@@ -7,7 +7,7 @@ void handle_sigint(int signo)
     nInterrupt = 1;
 }
 
-main()
+int main(int argc, char *argv[])
 {
     sigset_t mask,omask;
     signal(SIGINT,handle_sigint);

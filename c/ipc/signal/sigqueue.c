@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
+#include <string.h>
 
 void HandleSigint(int signo,siginfo_t *info,void *none)
 {
@@ -8,7 +10,7 @@ void HandleSigint(int signo,siginfo_t *info,void *none)
     exit(0);
 }
 
-main()
+int main(int argc, char *argv[])
 {
     int pid;
     struct sigaction act;

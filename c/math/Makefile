@@ -3,7 +3,6 @@ TRIP		:= strip
 CFLAGS 		:= -Wall -Werror -lm
 
 ###############
-OBJSDIR 	:= .objs
 SRCS		:= $(wildcard *.c)
 OBJS		:= $(subst .c,.o,$(SRCS))
 TARGETS	:= $(subst .c,.elf,$(SRCS))
@@ -14,13 +13,12 @@ TARGETS	:= $(subst .c,.elf,$(SRCS))
 all: $(TARGETS)
 
 $(TARGETS): %.elf : %.o
-	@$(CC) -o $@ $(OBJSDIR)/$< $(CFLAGS)
+	@$(CC) -o $@ $< $(CFLAGS)
 	@$(TRIP) $@
 	@echo "Build $@ Done"
 
 $(OBJS): %.o : %.c
-	@mkdir -p $(OBJSDIR)
-	@$(CC) -c $< -o $(OBJSDIR)/$@
+	@$(CC) -c $< -o $@
 
 clean :
-	@rm -rf $(TARGETS) $(OBJSDIR)
+	@rm -rf $(TARGETS) $(OBJS)

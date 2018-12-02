@@ -1,13 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+
 void Handle_Sigcld(int signo)
 {
      int pid,status;
      pid = waitpid(-1,&status,0);
      printf("Child process %d exit with code %d\n",pid,status);
 }
-main()
+
+int main(int argc, char *argv[])
 {
     int i,pid;
     signal(SIGCLD,Handle_Sigcld);

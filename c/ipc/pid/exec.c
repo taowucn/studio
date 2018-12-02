@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
-main()
+
+int main(int argc, char *argv[])
 {
     pid_t pid;
-    char *para[]={"ls","-a",NULL};
+    char *para[]={"ls", "-a", NULL};
+
     if ((pid = fork()) < 0) {
         perror("fork");
         exit(0);
@@ -31,5 +33,6 @@ main()
     }
 #endif
     printf("Main Exit\n");
-    return;
+
+    return 0;
 }

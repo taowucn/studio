@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
+
 void HandleSigint(int signo)//信号处理函数
 {
     printf("receive signal %d\n",signo);
 }
-main()
+
+int main(int argc, char *argv[])
 {
     if(signal(SIGINT,HandleSigint)  == SIG_ERR)//安装信号
     {

@@ -1,12 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 
 void handle_sigint(int signo)
 {
     printf("receive signal %d\n",signo);
 }
 
-main()
+int main(int argc, char *argv[])
 {
     sigset_t mask;
     sigset_t omask;

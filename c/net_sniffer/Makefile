@@ -1,17 +1,24 @@
-CC = gcc
-MAKEVV = @
-FLAG = -lpcap -lpthread
+CC 			:= gcc
+TRIP		:= strip
+CFLAGS 		:= -Wall -Werror -lpthread -lpcap
 
-.PHONY: all  clean
+###############
+SRCS		:= $(wildcard *.c)
+OBJS		:= $(subst .c,.o,$(SRCS))
+TARGETS	:= $(subst .c,.elf,$(SRCS))
+###############
 
-SRC = $(wildcard *.c)
-OBJ = $(subst .c,.o,$(SRC))
+.PHONY: all clean
 
-all: $(OBJ)
+all: $(TARGETS)
 
-$(OBJ): %.o : %.c
-	$(MAKEVV)$(CC) $< $(FLAG) -o $@
+$(TARGETS): %.elf : %.o
+	@$(CC) -o $@ $< $(CFLAGS)
+	@$(TRIP) $@
+	@echo "Build $@ Done"
 
-clean : 
-	rm -f *.o
+$(OBJS): %.o : %.c
+	@$(CC) -c $< -o $@
 
+clean :
+	@rm -rf $(TARGETS) $(OBJS) core

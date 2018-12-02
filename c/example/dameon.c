@@ -6,6 +6,10 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #define MAXFILE 65535
 
@@ -18,7 +22,7 @@ int main()
 	pc=fork();
 	if(pc<0)
 	{
-		pintf("fork error!");
+		printf("fork error!");
 		exit(1);
 	}
 	else if(pc>0)
@@ -33,7 +37,7 @@ int main()
 		close(i);
 	while(1)
 	{
-		if(fd=open("/tmp/dameon.log",O_CREATE | O_RWONLY | O_APPED,0600)<0)
+		if(fd=open("/tmp/dameon.log", O_CREAT | O_RDONLY | O_APPEND, 0600)<0)
 		{
 			perror("open");
 			exit(1);
