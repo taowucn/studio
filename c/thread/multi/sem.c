@@ -82,5 +82,6 @@ int main(int argc, char **argv)
 	if ( argc > 1) {
 		semctl(semid, 0, IPC_RMID, arg);
 	}
+
 	return 0;
 }

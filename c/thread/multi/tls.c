@@ -40,10 +40,10 @@ void* thread_function (void* args)
 	return NULL;
 }
 
-int main ()
+int main(int argc, char *argv)
 {
-	int i;
 	pthread_t threads[5];
+	int i = 0;
 
 	/* Create a key to associate thread log file pointers in
 	thread-specific data. Use close_thread_log to clean up the file
@@ -51,12 +51,14 @@ int main ()
 	pthread_key_create (&thread_log_key, close_thread_log);
 
 	/* Create threads to do the work. */
-	for (i = 0; i < 5; ++i)
+	for (i = 0; i < 5; ++i) {
 		pthread_create (&(threads[i]), NULL, thread_function, NULL);
+	}
 
 	/* Wait for all threads to finish. */
-	for (i = 0; i < 5; ++i)
+	for (i = 0; i < 5; ++i) {
 		pthread_join (threads[i], NULL);
+	}
 
 	return 0;
 }

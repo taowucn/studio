@@ -1,6 +1,7 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "threadpool.h"
 #include "pool_util.h"
@@ -139,7 +140,7 @@ void threadpool_add_task(threadpool_t *pool, TASK_ROUTINE mytask, TASK_PARA_TYPE
 		pthread_t tid;
 		int ret;
 		if ((ret = pthread_create(&tid, NULL, thread_routine, (void*)pool))) {
-			ERROR("pthread_create", ret);
+			ERROR("pthread_create ret: %d", ret);
 		}
 		pool->threadcnt++;
 	}

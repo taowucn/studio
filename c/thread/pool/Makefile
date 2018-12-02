@@ -1,22 +1,24 @@
+CC 			:= gcc
+TRIP		:= strip
+CFLAGS 		:= -Wall -Werror -lpthread
+
+###############
+SRCS		:= $(wildcard *.c)
+OBJS		:= $(subst .c,.o,$(SRCS))
+TARGETS	:= test_thpool
+###############
 
 .PHONY: all clean
 
-CC=gcc
-CFLAGS=-Wall -g
-LIB=-lpthread
-OBJS=main.o threadpool.o condition.o
-BIN=proc.o
+all: $(TARGETS)
 
-all:$(BIN)
-$(BIN):$(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIB)
+$(TARGETS): $(OBJS)
+	$(CC) -o $@ $(OBJS) $(CFLAGS)
+	@$(TRIP) $@
+	@echo "Build $@ Done"
 
-# to acquire the rules
-#use: gcc -MM *.c
-condition.o: condition.c condition.h pool_util.h
-main.o: main.c threadpool.h condition.h
-threadpool.o: threadpool.c threadpool.h condition.h pool_util.h
+$(OBJS): %.o : %.c
+	@$(CC) -c $< -o $@
 
-clean:
-	@rm -rf *.dSYM *.o $(BIN)
-
+clean :
+	@rm -rf $(TARGETS) $(OBJS) core

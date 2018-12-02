@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-uint32_t get_file_size(const char *path)
+static uint32_t get_file_size(const char *path)
 {
 	struct stat statbuff;
 
@@ -15,7 +15,7 @@ uint32_t get_file_size(const char *path)
 	}
 }
 
-int check_file_size(uint32_t in_size, uint32_t algin_sz)
+static int check_file_size(uint32_t in_size, uint32_t algin_sz)
 {
 	if ((in_size % algin_sz) == 0) {
 		return 0;

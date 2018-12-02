@@ -5,8 +5,7 @@
 
 #define BUFFER_SIZE 8
 
-struct Products
-{
+struct Products {
 	int buffer[BUFFER_SIZE];
 	pthread_mutex_t locker;
 	pthread_cond_t notEmpty;

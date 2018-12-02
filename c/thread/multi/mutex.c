@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-int myglobal;
+static int myglobal;
 
 pthread_mutex_t mymutex;
 

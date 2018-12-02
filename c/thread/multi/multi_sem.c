@@ -50,4 +50,6 @@ int main(int argc, char **argv)
 	pthread_join(a_thread, thread_result);
 
 	sem_destroy(&bin_sem);
+
+	return 0;
 }
