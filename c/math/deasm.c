@@ -7,5 +7,6 @@ int main(int argc, char *argv[])
 	a = exp(b);
 
 	printf("exp=%lf\n", a);
+
 	return 0;
 }

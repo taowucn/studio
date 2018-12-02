@@ -1,17 +1,24 @@
-CC = gcc
-MAKEVV = @
-FLAG = -lm -static
+CC 		:= gcc
+TRIP	:= strip
+CFLAGS 	:= -Wall -Werror -lm
 
-.PHONY: all  clean
+###############
+SRCS		:= $(wildcard *.c)
+OBJS		:= $(subst .c,.o,$(SRCS))
+TARGETS	:= $(subst .c,.elf,$(SRCS))
+###############
 
-SRC = $(wildcard *.c)
-OBJ = $(subst .c,.o,$(SRC))
+.PHONY: all clean
 
-all: $(OBJ)
+all: $(TARGETS)
 
-$(OBJ): %.o : %.c
-	$(MAKEVV)$(CC) $< -o $@ $(FLAG) 
+$(TARGETS): %.elf : %.o
+	@$(CC) -o $@ $< $(CFLAGS)
+	@$(TRIP) $@
+	@echo "Build $@ Done"
 
-clean : 
-	rm -f *.o
+$(OBJS): %.o : %.c
+	@$(CC) -c $< -o $@
 
+clean :
+	@rm -f $(TARGETS) $(OBJS)
