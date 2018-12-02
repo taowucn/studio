@@ -46,30 +46,32 @@ int main(int argc, char **argv)
 
 	if (argc == 1) {
 		arg.val = 1;
-		ret = semctl(semid,0,SETVAL,arg);
+		ret = semctl(semid, 0, SETVAL, arg);
 		if (ret < 0) {
 			perror("ctl sem error");
-			semctl(semid,0,IPC_RMID,arg);
+			semctl(semid, 0, IPC_RMID, arg);
 			return -1 ;
 		}
 	}
 
 	ret = semctl(semid, 0, GETVAL, arg);
-	printf("after semctl setval sem[0].val =[%d]\n",ret);
-	system("date") ;
-	printf("P operate begin\n") ;
+	printf("after semctl setval sem[0].val =[%d]\n", ret);
+	system("date");
+
+	printf("P operate begin\n");
 	flag = P(semid, 0);
 	if (flag) {
-		perror("P operate error") ;
+		perror("P operate error");
 		return -1 ;
 	}
-	printf("P operate end\n") ;
-	ret = semctl(semid,0,GETVAL,arg);
-	printf("after P sem[0].val=[%d]\n",ret);
+	printf("P operate end\n");
+	ret = semctl(semid, 0, GETVAL, arg);
+	printf("after P sem[0].val=[%d]\n", ret);
 	system("date") ;
 	if (argc == 1) {
 		sleep(1);
 	}
+
 	printf("V operate begin\n") ;
 	if (V(semid, 0) < 0) {
 		perror("V operate error") ;
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
 	ret = semctl(semid, 0, GETVAL, arg);
 	printf("after V sem[0].val = %d\n", ret);
 	system("date") ;
-	if ( argc > 1) {
+	if (argc > 1) {
 		semctl(semid, 0, IPC_RMID, arg);
 	}
 

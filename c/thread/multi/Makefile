@@ -21,4 +21,4 @@ $(OBJS): %.o : %.c
 	@$(CC) -c $< -o $@
 
 clean :
-	@rm -rf $(TARGETS) $(OBJS) core
+	@rm -rf $(TARGETS) $(OBJS) core *.log

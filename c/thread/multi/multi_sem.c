@@ -5,45 +5,45 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-sem_t bin_sem;
+static sem_t bin_sem;
 
 void *thread_function1(void *arg)
 {
-	printf("thread_1, sem_wait\n");
+	printf("T1: sem_wait ...\n");
 	sem_wait(&bin_sem);
-	printf("sem_wait\n");
+	printf("T1: sem_wait done\n");
 }
 
 void *thread_function2(void *arg)
 {
-	printf("thread_2, sem_post\n");
+	printf("T2: sem_post ...\n");
 	sem_post(&bin_sem);
-	printf("sem_post\n");
+	printf("T2: sem_post done\n");
 }
 
 int main(int argc, char **argv)
 {
-	int res;
+	void *thread_result = NULL;
 	pthread_t a_thread, b_thread;
-	void *thread_result;
+	int res = 0;
 
 	res = sem_init(&bin_sem, 0, 0);
-	if (res != 0){
-		perror("Semaphore initialization failed");
+	if (res != 0) {
+		perror("Semaphore initialization err\n");
 	}
-	printf("sem_init\n");
 
 	res = pthread_create(&a_thread, NULL, thread_function1, NULL);
-	if (res != 0){
-		perror("Thread creation failure");
+	if (res != 0) {
+		perror("pthread_create err");
 	}
-	printf("sleep -start\n");
+
+	printf("sleep ...\n");
 	sleep(2);
-	printf("sleep -end\n");
+	printf("sleep done\n");
 
 	res = pthread_create(&b_thread, NULL, thread_function2, NULL);
-	if (res != 0){
-		perror("Thread creation failure");
+	if (res != 0) {
+		perror("pthread_create err");
 	}
 
 	pthread_join(b_thread, thread_result);

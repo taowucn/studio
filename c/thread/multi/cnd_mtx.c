@@ -7,8 +7,10 @@
 static pthread_mutex_t mtx;
 static pthread_cond_t cond;
 
-static void *thread_func(void*arg)
+static void *thread_func_recv(void*arg)
 {
+	//sleep(1);
+
 	pthread_mutex_lock(&mtx);
 	printf("Wait Start\n");
 	pthread_cond_wait(&cond, &mtx);
@@ -36,12 +38,12 @@ int main(int argc, char **argv)
 	pthread_mutex_init(&mtx, NULL);
 	pthread_cond_init(&cond, NULL);
 	do {
-		ret = pthread_create(&tid[0], NULL, thread_func, NULL);
+		ret = pthread_create(&tid[0], NULL, thread_func_recv, NULL);
 		if (ret) {
 			perror("pthrea_create");
 			break;
 		}
-		ret = pthread_create(&tid[1], NULL, thread_func, NULL);
+		ret = pthread_create(&tid[1], NULL, thread_func_recv, NULL);
 		if (ret) {
 			perror("pthrea_create");
 			break;

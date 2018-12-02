@@ -41,8 +41,9 @@ void Produce(struct Products *products, int item)
 	products->buffer[products->posWriteTo] = item;
 	products->posWriteTo++;
 
-	if (products->posWriteTo >= BUFFER_SIZE)
+	if (products->posWriteTo >= BUFFER_SIZE) {
 		products->posWriteTo = 0;
+	}
 
 	pthread_cond_signal(&products->notEmpty);
 	pthread_mutex_unlock(&products->locker);
@@ -50,7 +51,7 @@ void Produce(struct Products *products, int item)
 
 int Consume(struct Products *products)
 {
-	int item;
+	int item = 0;
 
 	pthread_mutex_lock(&products->locker);
 
@@ -61,8 +62,9 @@ int Consume(struct Products *products)
 	item = products->buffer[products->posReadFrom];
 	products->posReadFrom++;
 
-	if (products->posReadFrom >= BUFFER_SIZE)
+	if (products->posReadFrom >= BUFFER_SIZE) {
 		products->posReadFrom = 0;
+	}
 
 	pthread_cond_signal(&products->notFull);
 	pthread_mutex_unlock(&products->locker);
