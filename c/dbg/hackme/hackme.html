@@ -1,0 +1,581 @@
+<html>
+<head>
+	<title>hackme: Deconstructing an ELF File</title>
+	<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+	<div class="header"><h1>hackme: Deconstructing an ELF File</h1></div>
+	<div class="story">
+		<p>A friend recently asked me to find the password for a little
+		hard-to-hack program he had written and I agreed to it. The
+		short journey of a few hours that led me to its password were
+		extremely interesting and this article describes the process as
+		well as some of the new techniques learnt along the way.</p>
+
+		<p>Few minutes after accepting his challenge, I received the
+		binary in an E-mail and I was on it! Those interested in giving
+		it a shot can download <a href="./hackme">the binary</a> file
+		and get back to this article later. Do let me know if you find
+		anything interesting along the way that I did not think of or
+		missed! Comments can be sent to manohar dot vanga at gmail dot
+		com with the title [hackme].</p>
+
+		<div class="subhead"><h2>Test Run</h2></div>
+
+		<p>I ran the binary and tried a couple of random passwords. As
+		expected, they failed, providing me with an extremely helpful
+		message:</p>
+		<div class="code"><code><pre>$ ./hackme
+Password, please? password
+Oops..
+</pre></code></div>
+
+		<p>Interestingly, running the binary under GDB gives a specially
+		crafted welcome message:</p>
+
+		<div class="code"><code><pre>$ $ gdb ./hackme 
+Reading symbols from /tmp/hack/hackme...(no
+debugging symbols found)...done.
+(gdb) r
+Starting program: ./hackme 
+<b>Fuck off! no debuggers!</b>
+
+Program exited with code 0364.
+(gdb) 
+</pre></code></div>
+
+		<p>Same with ptrace:</p>
+
+		<div class="code"><code><pre>$ strace ./hackme 
+execve("./hackme", ["./hackme"], [/* 41 vars */]) = 0
+brk(0)                                  = 0x9016000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such
+file or directory)
+... snip ...
+ptrace(PTRACE_TRACEME, 0, 0, 0)         = -1 EPERM (Operation
+not permitted)
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 3), ...})
+= 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb783e000
+<b>write(1, "Fuck off! no debuggers!\n", 24Fuck off! no debuggers!
+) = 24</b>
+_exit(2543604)                          = ?
+</pre></code></div>
+
+		<div class="subhead"><h2>The Obvious Stuff</h2></div>
+
+		<p>Even though the probability of a password being visible in
+		plain sight was near zero, I decided to give it a shot
+		anyway.</p>
+
+		<p>First, I checked if the binary was stripped or not:</p>
+
+		<div class="code"><code><pre>$ file hackme
+hackme: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically
+linked (uses shared libs), for GNU/Linux 2.6.27, stripped
+</pre></code></div>
+		
+		<p>It was stripped. Dead end there. GDB won't be much help with
+		a stripped binary in terms of deconstructing the logic. I
+		decided to try looking for a literal string comparison with the
+		password just in case:</p>
+
+		<div class="code"><code><pre>$ strings hackme
+/lib/ld-linux.so.2
+libdl.so.2
+__gmon_start__
+_Jv_RegisterClasses
+dlopen
+dlsym
+libc.so.6
+_IO_stdin_used
+__libc_start_main
+random
+GLIBC_2.1
+GLIBC_2.0
+PTRh 
+QVhE
+[^Ph
+[^_]
+8%':!06!
+%!'460
+&amp;64;3
+%'&lt;;!3
+UWVS
+[^_]
+Fuck off! no debuggers!
+Password, please? 
+Congratulations!
+Oops..
+</pre></code></div>
+
+		<p>Just in case, I try all the strings as passwords but they all
+		fail. Not too surprising. The output however gives us the
+		message that gets printed on success; "Congratulations!". It
+		also seems to be containing the string "libc.so.6" Fishy. A
+		quick ltrace quickly explains what the binary is doing:</p>
+
+		<div class="code"><code><pre>$ ltrace ./hackme 
+__libc_start_main(0x8048645, 1, 0xbfb48a04, 0x80486b0, 0x8048720
+&lt;unfinished ...&gt;
+dlopen("/lib/libc.so.6", 2)
+= 0xb7757ae0
+dlsym(0xb7757ae0, "ptrace")
+= 0x00eddf40
+dlsym(0xb7757ae0, "scanf")
+= 0x00e621a0
+dlsym(0xb7757ae0, "printf")
+= 0x00e5baa0
+Fuck off! no debuggers!
++++ exited (status 244) +++
+</pre></code></div>
+		
+		<p>While this gives us the same welcoming message, we can see
+		what is happening here. The libc shared library is being opened
+		dynamically and the addresses of ptrace, scanf and printf are
+		being retreived with dlsym! Sneaky trick!</p>
+
+		<p>More irritatingly however, the strings output shows that the
+		binary is using the random() function. However, since it is a
+		reproducible program, that is the password works every time, the
+		call to random is probably not being seeded. We will worry about
+		this later.</p>
+
+		<p>The strings output also explains how the binary is detecting
+		the debugging environment. Calling ptrace while running inside a
+		ptraced environment (eg. strace, ltrace or gdb) returns -1.</p>
+
+		<p>Getting over this hurdle however is quite easy using the
+		LD_PRELOAD environment variable. The LD_PRELOAD environment
+		variable can contain a list of custom shared objects which then
+		get loaded prior to all others when running an executable. It is
+		an easy route to blocking a process from calling unwanted
+		functions. I quickly put aside this hurdle with a quick dummy
+		function in a new file:</p>
+
+		<div class="code"><code><pre>/* fake ptrace() */
+#include &lt;stdio.h&gt;
+
+long ptrace(int x, int y, int z)
+{
+	printf("B-)\n");
+	return 0;
+}
+</pre></code></div>
+
+		<p>I quickly compiled it:</p>
+
+		<div class="code"><code><pre>gcc -shared -fPIC -o fake.so fake.c
+</pre></code></div>
+
+		<p>Now running under strace with the LD_PRELOAD variable set to
+		our fake shared object gives us the full scoop!</p>
+
+		<div class="code"><code><pre>$ strace -E LD_PRELOAD=./fake.so ./hackme
+execve("./hackme", ["./hackme"], [/* 24 vars */]) = 0
+brk(0)                                  = 0x9727000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such
+file or directory)
+mmap2(NULL, 8192, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb78a6000
+<b>open("./fake", O_RDONLY)                = 3</b>
+read(3,
+"\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\240\3\0\0004\0\0\0"...,
+512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=6709, ...}) = 0
+getcwd("/tmp/hack", 128) = 25
+mmap2(NULL, 8216, PROT_READ|PROT_EXEC,
+MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb78a3000
+mmap2(0xb78a4000, 8192, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0) = 0xb78a4000
+close(3)                                = 0
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such
+file or directory)
+open("/etc/ld.so.cache", O_RDONLY)      = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=92974, ...}) = 0
+mmap2(NULL, 92974, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb788c000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such
+file or directory)
+open("/lib/i386-linux-gnu/libdl.so.2", O_RDONLY) = 3
+read(3,
+"\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0@\n\0\0004\0\0\0"...,
+512) = 512
+fstat64(3, {st_mode=S_IFREG|0644, st_size=9736, ...}) = 0
+mmap2(NULL, 12408, PROT_READ|PROT_EXEC,
+MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7888000
+mmap2(0xb788a000, 8192, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1) = 0xb788a000
+close(3)                                = 0
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such
+file or directory)
+open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY) = 3
+read(3,
+"\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\220o\1\0004\0\0\0"...,
+512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1434180, ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7887000
+mmap2(NULL, 1444360, PROT_READ|PROT_EXEC,
+MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb7726000
+mprotect(0xb7880000, 4096, PROT_NONE)   = 0
+mmap2(0xb7881000, 12288, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x15a) = 0xb7881000
+mmap2(0xb7884000, 10760, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0xb7884000
+close(3)                                = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb7725000
+set_thread_area({entry_number:-1 -&gt; 6, base_addr:0xb77256c0,
+limit:1048575, seg_32bit:1, contents:0, read_exec_only:0,
+limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+mprotect(0xb7881000, 8192, PROT_READ)   = 0
+mprotect(0xb788a000, 4096, PROT_READ)   = 0
+mprotect(0xb78a4000, 4096, PROT_READ)   = 0
+mprotect(0xb78c5000, 4096, PROT_READ)   = 0
+munmap(0xb788c000, 92974)               = 0
+brk(0)                                  = 0x9727000
+brk(0x9748000)                          = 0x9748000
+open("/lib/libc.so.6", O_RDONLY)        = -1 ENOENT (No such
+file or directory)
+fstat64(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 0), ...})
+= 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb78a2000
+write(1, "B-)\n", 4B-)
+)                    = 4
+fstat64(0, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 0), ...})
+= 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE,
+MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0xb78a1000
+write(1, "Password, please? ", 18Password, please? )      = 18
+<b>read(0, password
+"password\n", 1024)             = 9</b>
+write(1, "Oops..\n", 7Oops..
+)                 = 7
+exit_group(7)                           = ?
+</pre></code></div>
+
+		<p>Looks like the password buffer is 1024 bytes long. I could
+		try overflowing that but coupled with stack randomization, it
+		would be a hard to do on a lazy Friday. More importantly, my
+		goal is not the break the program but to get the password!<p>
+
+		<p>It is starting to seem like my only option left is to sit and
+		reverse engineer the code for this binary; something I did not
+		want to get in to on a Friday afternoon. A geek challenge
+		however trumps laziness any day of the week so I started with
+		the task of disassembling the binary.</p>
+
+		<div class="subhead"><h2>Disassembly</h2></div>
+
+		<p>I started with an objdump output to deconstruct (go ahead and
+		open it in a new tab if you want to follow along):</p>
+
+		<div class="code"><code><pre>$ objdump -D ./hackme &gt; <a
+href="objdumpout.txt">out.asm</a>
+</pre></code></div>
+
+		<p>The assembly is a mess as expected of a stripped binary. I
+		quickly need to find the part that pertains to the password
+		encryption logic. From the test run, I know that the logic is
+		somewhere between where it prints the "Password, please?"
+		message and the "Oops.." message. I will start by locating these
+		strings in the assembly output. The "Pa" of "Password" from the
+		"Password, please?" string is 50 followed by 61 in
+		hexadecimal. A quick search locates the string in the assembly
+		output:</p>
+
+		<div class="code"><code><pre>$ grep "50 61" objdumpout.txt 
+ 8048798:	00 <b>50 61</b>             	add    %dl,0x61(%eax)
+</pre></code></div>
+
+		<p>The address of the string therefore is 0x8048799 (since the
+		first byte needs to be skipped). Heading over to this address
+		with a quick search leads me to this code:</p>
+
+		<div class="code"><code><pre> 804859d:       68 99 87 04 08          push   $0x8048799
+ 80485a2:       ff 15 94 99 04 08       call   *0x8049994
+</pre></code></div>
+
+		<p>Great! It is pushing the address of the string (as a literal)
+		on to the stack and calling an address. I assume that this
+		address is the address returned by dlsym for printf.</p>
+
+		<p>Now I need to find the "Oops.." message. I repeat the same
+		procedure to get to the string and find the code:</p>
+
+		<div class="code"><code><pre> 8048633:       68 c1 87 04 08          push   $0x80487c1
+ 8048638:       ff d0                   call   *%eax
+</pre></code></div>
+
+		<p>While I am at it, I pick out the "Congratulations!" message
+		as well and find the location. Finally the code looks much more
+		comprehensible:</p>
+
+		<div class="code"><code><pre>
+<b> # The "Password, please?" message is being printed here
+ 804859d:	68 99 87 04 08       	push   $0x8048799
+ 80485a2:	ff 15 94 99 04 08    	call   *0x8049994</b>
+ 80485a8:	8d 45 84             	lea    -0x7c(%ebp),%eax
+ ... snip ...
+ 8048626:	83 ec 0c             	sub    $0xc,%esp
+<b> # The "Congratulations!" message is being printed here
+ 8048629:	68 af 87 04 08       	push   $0x80487af
+ 804862e:	eb 08                	jmp    8048638 &lt;dlopen@plt+0x268&gt;</b>
+ 8048630:	83 ec 0c             	sub    $0xc,%esp
+<b> # The "Oops.." message is being printed here
+ 8048633:	68 c1 87 04 08       	push   $0x80487c1
+ 8048638:	ff d0                	call   *%eax</b>
+</pre></code></div>
+
+		<p>I quickly annotate the assembly so I remember what I figured
+		out:</p>
+
+		<div class="code"><code><pre>
+ 804859d:	68 99 87 04 08       	push   $0x8048799
+ 80485a2:	ff 15 94 99 04 08    	call   *0x8049994
+<b> # The "Password, please?" message is being printed here</b>
+
+ 80485a8:	8d 45 84             	lea    -0x7c(%ebp),%eax
+<b> # This is probably the address of the password buffer.</b>
+
+ 80485ab:	5b                   	pop    %ebx
+ 80485ac:	5e                   	pop    %esi
+
+ 80485ad:	50                   	push   %eax
+ 80485ae:	68 ac 87 04 08       	push   $0x80487ac
+ 80485b3:	ff 15 90 99 04 08    	call   *0x8049990
+ 80485b9:	83 c4 10             	add    $0x10,%esp
+<b> # Push the password buffer and the string "%s" onto the stack and call scanf</b>
+
+ 80485bc:	31 c0                	xor    %eax,%eax
+<b> # Clear EAX.</b>
+
+ 80485be:	eb 01                	jmp    <font color=red>80485c1</font> &lt;dlopen@plt+0x1f1&gt;
+ <font color=blue>80485c0</font>:	40                   	inc    %eax
+ <font color=red>80485c1</font>:	80 7c 05 84 00       	cmpb   $0x0,-0x7c(%ebp,%eax,1)
+ 80485c6:	75 f8                	jne    <font color=blue>80485c0</font> &lt;dlopen@plt+0x1f0&gt;
+<b> # Find the string length of the password we entered. Return value in EAX.</b>
+
+ 80485c8:	31 db                	xor    %ebx,%ebx
+
+ 80485ca:	83 f8 13             	cmp    $0x13,%eax
+ 80485cd:	0f 94 c3             	sete   %bl
+<b> # Hmm! If the strlen(buf) != 0x13) BL is set to 1! We have our first hint!</b>
+
+ 80485d0:	be 0a 00 00 00       	mov    $0xa,%esi
+<b> # Move integer 10 into ESI. This is the start of a loop that runs 10 times.
+ # Basically for (i = 0; i &lt; 10; i++)</b>
+
+ 80485d5:	e8 b6 fd ff ff       	call   8048390 &lt;random@plt&gt;
+<b> # Call random(). Return value in EAX</b>
+
+ 80485da:	b9 13 00 00 00       	mov    $0x13,%ecx
+ 80485df:	99                   	cltd   
+ 80485e0:	f7 f9                	idiv   %ecx
+<b> # Divide the random number in EAX with 19. EAX is quotient, EDX is remainder.</b>
+
+ 80485e2:	31 c0                	xor    %eax,%eax
+<b> # Throw away quotient.</b>
+
+ 80485e4:	8a 8a 9c 86 04 08    	mov    0x804869c(%edx),%cl
+<b> # Hmm. That address looks like a lookup table of some sort.
+ # The operation is basically doing "CL = table[remainder]".
+ # Since remainder can't be more that 19, I dump the first 19 bytes of this
+ # address:
+ #     0xfb, 0x4c, 0x8d, 0x58, 0x0f, 0xd4, 0xe8, 0x94, 0x98, 0xee,
+ #     0x6b, 0x18, 0x30, 0xe0, 0x55, 0xc5, 0x28, 0x0e</b>
+
+ 80485ea:	0f b6 7c 15 84       	movzbl -0x7c(%ebp,%edx,1),%edi
+<b> # This basically does EDI = password[remainder]</b>
+
+ 80485ef:	42                   	inc    %edx
+ 80485f0:	89 95 74 ff ff ff    	mov    %edx,-0x8c(%ebp)
+<b> # Increment the remainder and store it in another variable</b>
+
+ 80485f6:	31 d2                	xor    %edx,%edx
+ 80485f8:	eb 0c                	jmp    <font color=blue>8048606</font> &lt;dlopen@plt+0x236&gt;
+ <font color=red>80485fa</font>:	69 c0 8d 78 01 6d    	imul   $0x6d01788d,%eax,%eax
+ 8048600:	42                   	inc    %edx
+ 8048601:	05 39 30 00 00       	add    $0x3039,%eax
+ <font color=blue>8048606</font>:	3b 95 74 ff ff ff    	cmp    -0x8c(%ebp),%edx
+ 804860c:	7c ec                	jl     <font color=red>80485fa</font> &lt;dlopen@plt+0x22a&gt;
+<b> # This is a weird loop. It seems to be a pseudorandom generator.
+ # The loop runs while a counter is less than the incremented remainder above.
+ # Inside, it's doing the following (remember eax was cleared above to 0):
+ #     eax = eax * 0x6d01788d //This is a prime number according to Wolfram Alpha
+ #     eax += 0x3039 // 12345 in decimal
+ # That is an unseeded (or seeded to 0) pseudorandom generator! Nice but
+ # pointless as it is unseeded.</b>
+
+ 804860e:	31 f8                	xor    %edi,%eax
+<b> # XOR the pseudorandom value above with password[remainder] as stored above</b>
+
+ 8048610:	38 c1                	cmp    %al,%cl
+<b> # Compare the lower byte of the XOR'ed result with the lookup table entry stored in CL</b>
+
+ 8048612:	b8 00 00 00 00       	mov    $0x0,%eax
+ 8048617:	0f 45 d8             	cmovne %eax,%ebx
+<b> # If the lower byte of the XOR is not equal to the lookup table entry set EBX=0</b>
+
+ 804861a:	4e                   	dec    %esi
+ 804861b:	75 b8                	jne    80485d5 &lt;dlopen@plt+0x205&gt;
+<b> # Decrement the main loop counter (the one that runs 10 times) and jump
+ # if more iterations are left</b>
+
+ 804861d:	85 db                	test   %ebx,%ebx
+ 804861f:	a1 94 99 04 08       	mov    0x8049994,%eax
+ 8048624:	74 0a                	je     8048630 &lt;dlopen@plt+0x260&gt;
+<b> # At last! Jump to the failure message (past the congratulations) if EBX is 0!
+ # EBX should be non-zero in order to print the congratulations message!</b>
+
+ 8048626:	83 ec 0c             	sub    $0xc,%esp
+
+<b> # The "Congratulations!" message is being printed here</b>
+ 8048629:	68 af 87 04 08       	push   $0x80487af
+ 804862e:	eb 08                	jmp    8048638 &lt;dlopen@plt+0x268&gt;
+ 8048630:	83 ec 0c             	sub    $0xc,%esp
+
+<b> # The "Oops.." message is being printed here</b>
+ 8048633:	68 c1 87 04 08       	push   $0x80487c1
+ 8048638:	ff d0                	call   *%eax
+</pre></code></div>
+
+		<p>Phew! That was not as bad as I expected! Converting that
+		logic to C code that dumps out the password took me a while
+		with testing and the final result looked like the following:</p>
+
+		<div class="code"><code><pre>
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main()
+{
+	int i, j, edi;
+	char buf[50], ch;
+	char out[50];
+	unsigned char check;
+	int ret = 0, val, len, rem;
+	int magic;
+	int k;
+	unsigned char arr[] = {0x6a, 0xfb, 0x4c, 0x8d, 0x58, 0x0f, 0xd4, 0xe8,
+		0x94, 0x98, 0xee, 0x6b, 0x18, 0x30, 0xe0, 0x55, 0xc5, 0x28,
+		0x0e};
+	
+	for (i = 0; i &lt; 19; i++)
+		out[i] = 'x';
+	out[i] = '\0';
+
+	for (i = 10; i &gt; 0; i--) {
+		int m2;
+
+		val = random();
+		rem = val%19;
+		check = arr[rem] &amp; 0xff;
+		ch = buf[rem++];
+
+		j = 0;
+		magic = 0;
+		printf("rem = %d\n", rem);
+		while (j &lt; rem) {
+			magic *= 1828812941;
+			magic += 12345;
+			j++;
+		}
+		m2 = magic;
+
+		magic ^= ch;
+		out[rem - 1] = (m2 &amp; 0xff) ^ (check &amp; 0xff));
+	}
+	printf("Password: %s\n", out);
+}
+</pre></code></div>
+
+		<p>Now for the fun; the output:</p>
+
+		<div class="code"><code><pre>$ ./decompiled
+rem = 3
+rem = 16
+rem = 4
+rem = 4
+rem = 11
+rem = 9
+rem = 11
+rem = 12
+rem = 3
+rem = 8
+Password: xxsaxxxpexYoxxxexxx
+</pre></code></div>
+
+		<p>The loop in the binary runs only 10 times and it has
+		repeating checks for some offsets of the password. The only
+		characters of the password that matter are the ones NOT marked
+		with an 'x' in the output (I make the program set these as it
+		runs).</p>
+
+		<p>Now the sweet part! I run the password against the original
+		program:</p>
+
+		<div class="code"><code><pre>$ ./hackme 
+Password, please? xxsaxxxpexYoxxxexxx
+Congratulations!
+	</div>
+
+		<p>HA! That was fun!</p>
+
+		<div class="subhead"><h2>Conclusions</h2></div>
+
+		<p>So what did I learn?</p>
+		
+		<b>Know Thy Tools</b>
+		<p>I knew how to get around many of the hurdles I faced from
+		past knowledge and experiences with the various tools I used.
+		The better you know your tools, the more you can think about the
+		real issues at hand (in this case, reversing the program
+		logic).</p>
+
+		<b>Test the Waters</b>
+		<p>I knew I would find an easy way to reverse this program but I
+		tried all the easy routes anyway. Even though it helped did not
+		provide me with much information, I gained confidence after
+		having eliminated some of the options. It cleared the way
+		forward.</p>
+
+		<b>Know Thy Assembly</b>
+		<p>The machine instructions were a little hard to decompile and
+		I found myself referencing the Intel manuals from time to time
+		to figure out what was going on. More than the assembly itself
+		though, I really recommend learning the GNU Assembler syntax. I
+		was familiar with the Intel syntax (eg. NASM) but not completely
+		proficient with GAS syntax (AT&amp;T syntax). I found <a
+		href="http://www.imada.sdu.dk/Courses/DM18/Litteratur/IntelnATT.htm">this article</a>
+		and <a href="http://sig9.com/articles/att-syntax">this article</a>
+		very useful in quickly brushing this up.</p>
+
+		<p>Some thoughts on the program itself follow</p>
+		<ul>
+			<li>Checking only few parts of the password was
+			ineffective although it would not have made life much
+			more difficult if every character was checked. (Note: The
+			original author told me he put the 10 in for debugging
+			purposes and forgot to change it)</li>
+			<li>The random number was a nice way to scare me a
+			little but in the end, it had to be unseeded to be
+			deterministic and consequently, not very effective. If I
+			had a different version of libc with a different
+			random(), the program would probably have failed with
+			the original password.</li>
+			<li>The actual password was "SesameOpenYourself!"! I
+			came up with a few nonsensical variations that worked as
+			well. eg. "NasaJeeperYouShelby".</li>
+		</ul>
+
+		<p>All in all, a good friday afternoon! Again, comments can be
+		mailed to manohar dot vanga at gmail dot com with a title of
+		[hackme].</p>
+
+		<p>Download: <a href="./hackme.tgz">all files</a></p>
+</body>
+</html>
