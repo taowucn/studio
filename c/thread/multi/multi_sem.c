@@ -27,6 +27,9 @@ int main(int argc, char **argv)
 	pthread_t a_thread, b_thread;
 	int res = 0;
 
+	int n[1 << 20];
+	memset(n, 0, sizeof(n));
+
 	res = sem_init(&bin_sem, 0, 0);
 	if (res != 0) {
 		perror("Semaphore initialization err\n");

@@ -7,8 +7,16 @@
 static pthread_mutex_t mtx;
 static pthread_cond_t cond;
 
+static void *show_me(void*arg)
+{
+	printf("Show me\n");
+}
+
 static void *thread_func_recv(void*arg)
 {
+	pthread_t tid;
+	int ret = 0;
+
 	//sleep(1);
 
 	pthread_mutex_lock(&mtx);
@@ -16,6 +24,12 @@ static void *thread_func_recv(void*arg)
 	pthread_cond_wait(&cond, &mtx);
 	printf("Wait Done\n");
 	pthread_mutex_unlock(&mtx);
+
+	ret = pthread_create(&tid, NULL, show_me, NULL);
+	if (ret) {
+		perror("pthrea_create");
+	}
+	pthread_join(tid, NULL);
 }
 
 static void *thread_func_send(void*arg)

@@ -1,6 +1,6 @@
 CC 			:= gcc
 TRIP		:= strip
-CFLAGS 		:= -Wall -Werror -lpthread
+CFLAGS 		:= -Wall -Werror -lpthread -g
 
 ###############
 SRCS		:= $(wildcard *.c)
