@@ -9,11 +9,13 @@ static void *test(void *s)
 {
 	int buffer[1024];
 
-	printf("i = %d\n", i);
 	i++;
-
 	buffer[0] = i;
+	printf("i: %d, buf: %d\n", i, buffer[0]);
+
 	test(s);
+
+	return NULL;
 }
 
 int main(void)
