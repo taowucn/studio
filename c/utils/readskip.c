@@ -26,14 +26,14 @@ static int check_file_size(uint32_t in_size, uint32_t algin_sz)
 
 int main(int argc, char *argv[])
 {
-	struct stat in_state;
+	//struct stat in_state;
 	FILE *in_fp = NULL;
 	FILE *out_fp = NULL;
 	char *in_file = NULL;
 	char *out_file = NULL;
 	char *data = NULL;
 	uint32_t in_size = 0;
-	uint32_t out_size = 0;
+	//uint32_t out_size = 0;
 	uint32_t read_sz = 0;
 	uint32_t skip_sz = 0;
 	uint32_t algin_sz = 0;

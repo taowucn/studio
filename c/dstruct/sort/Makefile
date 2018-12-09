@@ -1,6 +1,7 @@
 CC 			:= gcc
 TRIP		:= strip
-CFLAGS 		:= -Wall -Werror
+CFLAGS 		:= -Wall -Werror -g
+LDFLAGS		:=
 
 ###############
 SRCS		:= $(wildcard *.c)
@@ -13,12 +14,12 @@ TARGETS	:= $(subst .c,.elf,$(SRCS))
 all: $(TARGETS)
 
 $(TARGETS): %.elf : %.o
-	@$(CC) -o $@ $< $(CFLAGS)
+	@$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 	@$(TRIP) $@
 	@echo "Build $@ Done"
 
 $(OBJS): %.o : %.c
-	@$(CC) -c $< -o $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 clean :
 	@rm -rf $(TARGETS) $(OBJS) core
