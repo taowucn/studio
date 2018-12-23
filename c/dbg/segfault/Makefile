@@ -1,11 +1,13 @@
 CC 			:= gcc
 TRIP		:= strip
-CFLAGS 		:= -Wall -Werror
+CFLAGS 		:= -g -Wall -Werror
+#CFLAGS		+= -fsanitize=address -fno-omit-frame-pointer
+
 LDFLAGS		:=
 ###############
 SRCS		:= $(wildcard *.c)
 OBJS		:= $(subst .c,.o,$(SRCS))
-TARGETS	:= $(subst .c,.elf,$(SRCS))
+TARGETS		:= $(subst .c,.elf,$(SRCS))
 ###############
 
 .PHONY: all clean

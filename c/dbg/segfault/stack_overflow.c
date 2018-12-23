@@ -1,4 +1,5 @@
-#include<string.h>
+#include <stdio.h>
+#include <string.h>
 
 static void overflow(char* arg)
 {
@@ -8,9 +9,11 @@ static void overflow(char* arg)
 
 int main(int argc, char *argv[])
 {
-	if (argc > 1) {
+	if (argc == 2) {
 		overflow(argv[1]);
-	}
+	} else {
+		printf("Usage: %s <string>\n", argv[0]);
+    }
 
 	return 0;
 }
