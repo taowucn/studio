@@ -21,4 +21,4 @@ $(OBJS): %.o : %.cpp
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 clean :
-	@rm -rf $(TARGETS) $(OBJS) core
+	@rm -rf $(TARGETS) $(OBJS)

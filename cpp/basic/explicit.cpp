@@ -26,7 +26,7 @@ private:
 
 int main(int argc, char *arg[])
 {
-    Test1 t1=12;
+    //Test1 t1=12;
 
     //Test2 t2=12;// compile error
     Test2 t2(12);

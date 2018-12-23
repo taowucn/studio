@@ -1,17 +1,24 @@
-CC = g++
-MAKEVV = @
-FLAG = 
+CC 			:= g++
+TRIP		:= strip
+CFLAGS 		:= -Wall -Werror
+LDFLAGS		:= -lm
+###############
+SRCS		:= $(wildcard *.cpp)
+OBJS		:= $(subst .cpp,.o,$(SRCS))
+TARGETS	:= $(subst .cpp,.elf,$(SRCS))
+###############
 
-.PHONY: all  clean
+.PHONY: all clean
 
-SRC = $(wildcard *.cpp)
-OBJ = $(subst .cpp,.o,$(SRC))
+all: $(TARGETS)
 
-all: $(OBJ)
+$(TARGETS): %.elf : %.o
+	@$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	@$(TRIP) $@
+	@echo "Build $@ Done"
 
-$(OBJ): %.o : %.cpp
-	$(MAKEVV)$(CC) $(FLAG) $< -o $@
+$(OBJS): %.o : %.cpp
+	@$(CC) $(CFLAGS) -c $< -o $@
 
-clean : 
-	rm -f *.o
-
+clean :
+	@rm -rf $(TARGETS) $(OBJS)
