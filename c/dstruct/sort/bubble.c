@@ -1,46 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
+#include <sys/time.h>
 
-void bubble_sort(int *list)
+void bubble_sort(uint32_t *list, uint32_t num)
 {
- int i = 0;
- int j = 0;
- int t = 0;
+	uint32_t i = 0, j = 0, t = 0;
+	uint32_t n = num - 1;
 
- for (i = 0; i < 9; i++) {
-   for (j = 0; j < 9 - i; j++) {
-     if (list[j] > list[j+1]){
-       t = list[j+1];
-       list[j+1] = list[j];
-       list[j] = t;
-     }
-   }
- }
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < (n - i); j++) {
+			if (list[j] > list[j + 1]) {
+				t = list[j + 1];
+				list[j + 1] = list[j];
+				list[j] = t;
+			}
+		}
+	}
 }
 
-void print_list(int *list)
+void print_list(uint32_t *list, uint32_t num)
 {
-  int i = 0;
-  for (i = 0; i < 10; i++) {
-    printf("%d:%d\n", i, list[i]);
-  }
+	uint32_t i = 0;
+
+	for (i = 0; i < num; i++) {
+		printf("%08u: %u\n", i, list[i]);
+	}
 }
 
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-  int i = 0;
-  int j = 0;
-  int list[10];
+#define MAX (100)
 
-  printf("Input 10 numbers.\n");
-  for (i = 0; i < 10; i ++) {
-    printf("%d:", i);
-    scanf("%d\n", &list[i]);
-  }
-  printf("Input END.\n");
+	uint32_t list[MAX] = {0};
+	uint32_t i = 0;
 
-  bubble_sort(list);
-  print_list(list);
+	for (i = 0; i < MAX; i++) {
+		srand((unsigned int)time(NULL));
+		list[i] = rand();
+	}
 
-  return 0;
+	bubble_sort(list, MAX);
+	print_list(list, MAX);
+
+	return 0;
 }

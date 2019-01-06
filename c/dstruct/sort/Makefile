@@ -1,6 +1,6 @@
 CC 			:= gcc
 TRIP		:= strip
-CFLAGS 		:= -Wall -Werror -g
+CFLAGS 		:= -Wall
 LDFLAGS		:=
 
 ###############
