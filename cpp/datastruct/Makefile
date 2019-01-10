@@ -1,6 +1,6 @@
 CC 			:= g++
 TRIP		:= strip
-CFLAGS 		:= -Wall -Werror -I/home/taowu/data/code/github/ComputeLibrary/include/half
+CFLAGS 		:= -Wall  -I/home/taowu/data/code/github/ComputeLibrary/include/half
 LDFLAGS		:= -lm
 ###############
 SRCS		:= $(wildcard *.cpp)
