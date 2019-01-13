@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <sys/time.h>
 
+//#include "list.h"
+
 #include "half.hpp"
 
 #define DEBUG_TIME (1)
@@ -29,16 +31,34 @@
 #define MEASURE_TIME_END(s)
 #endif
 
-#define HMAP_H (1 << 16)
-#define HMAP_W (32)
-#define HMAP_W_IDX_NUM (HMAP_W)
+#define HMAP_H (1 << 16) /* element number */
+#define HMAP_W (4) /* element number */
+#define HMAP_W_INFO_NUM (0)
+#define HMAP_W_NUM (HMAP_W - HMAP_W_INFO_NUM)
+
+#define HMAP_W_EXT (12)
+#define HMAP_W_EXT_INFO_NUM ((uint32_t)sizeof(void *))
+#define HMAP_W_EXT_NUM (HMAP_W_EXT - HMAP_W_EXT_INFO_NUM)
 
 using namespace half_float;
 
 struct hmap_row {
-	//uint16_t num;
-	uint16_t index[HMAP_W_IDX_NUM]; /* index rang: [0, 30] */
-	//void *next;
+	uint16_t index[HMAP_W_NUM];  /* index rang: [0, 8] */
+};
+
+struct hmap_row_ext {
+	/* ext next size : 8; NUM: 8/2 = 4 */
+	struct hmap_row_ext *next;
+
+	uint16_t index[HMAP_W_EXT_NUM]; /* index rang: [0, 512] */
+};
+
+struct hmap_list_hdr {
+	/* list header size :  8 x 2 + 2 + 2 + reserve(4) = 24 */
+	struct hmap_row_ext *head;
+	struct hmap_row_ext *curr;
+	uint16_t row_idx;
+	uint16_t column_num;
 };
 
 static int cmp(const void *p1, const void *p2)
@@ -71,7 +91,8 @@ static void init_hist_sort(uint16_t *hist_sort, uint32_t size)
 	MEASURE_TIME_END("init_hist_sort");
 }
 
-static void build_hist_map(struct hmap_row *hist_map, uint16_t *hist_num,
+static void build_hist_map(struct hmap_row *hist_map,
+	struct hmap_list_hdr *hist_list, uint16_t *hist_num,
 	half *data, uint32_t data_num)
 {
 	uint16_t *p_u16 = NULL;
@@ -79,44 +100,92 @@ static void build_hist_map(struct hmap_row *hist_map, uint16_t *hist_num,
 	MEASURE_TIME_VAR();
 
 	MEASURE_TIME_START();
-	memset((void *)hist_num, 0, HMAP_H );
+	memset((void *)hist_num, 0, HMAP_H * sizeof(uint16_t));
+	for (i = 0; i < HMAP_H; i++) {
+		if (hist_list[i].head) {
+			hist_list[i].curr = hist_list[i].head;
+			hist_list[i].row_idx = 0;
+			hist_list[i].column_num = 0;
+		}
+	}
 
 	p_u16 = (uint16_t *)data;
 	for (i = 0; i < data_num; i++) {
 		j = p_u16[i];
 		n = hist_num[j];
 
-		if (n < HMAP_W_IDX_NUM) {
+		if (n < HMAP_W_NUM) {
 			hist_map[j].index[n] = i;
 			hist_num[j]++;
 			//printf("%u: num: %u, data_idx: %u, data: %f\n", j,
 			//	hist_num[j], hist_map[j].index[n], (float)data[i]);
 		} else {
-			printf("hist_map column [%u] is full, data[%u]: %f\n", j, i, (float)data[i]);
-			break;
+			/* this first column */
+			if (hist_list[j].head == NULL) {
+				void *p = malloc(sizeof(struct hmap_row_ext));
+				if (!p) {
+					perror("malloc err");
+					break;
+				}
+				hist_list[j].head = (struct hmap_row_ext *)p;
+				hist_list[j].curr = (struct hmap_row_ext *)p;
+				hist_list[j].column_num++;
+			}
+			/* column is full */
+			if (hist_list[j].row_idx == HMAP_W_EXT_NUM) {
+				if (hist_list[j].curr->next == NULL) {
+					/* end column is full */
+					void *p = malloc(sizeof(struct hmap_row_ext));
+					if (!p) {
+						perror("malloc err");
+						break;
+					}
+					hist_list[j].curr->next = (struct hmap_row_ext *)p;
+				}
+				/* use the next column */
+				hist_list[j].curr = hist_list[j].curr->next;
+				hist_list[j].column_num++;
+				hist_list[j].row_idx = 0;
+			}
+			/* add data index */
+			hist_list[j].curr->index[hist_list[j].row_idx] = i;
+			hist_list[j].row_idx++;
+			hist_num[j]++;
+			//printf("Ext map list, %u: num: %u, data_idx: %u, data: %f\n", j,
+			//	hist_num[j], i, (float)data[i]);
 		}
 	}
-	MEASURE_TIME_END("build_hist_map");
+	MEASURE_TIME_END("\nbuild_hist_map");
 }
 
 int main(int argc, char **argv)
 {
-#define NUM (4)
-
-	float val_full[NUM] = {0.2, 2.5, 1.1, 1.1,};
-	half data[NUM];
-
-	uint16_t *p_u16 = NULL;
-	uint32_t i = 0, j = 0, n = 0;
+	float val_full[] = {0.8, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 2.5,};
 	struct hmap_row hist_map[HMAP_H] = {0};
+	struct hmap_list_hdr hist_list[HMAP_H] = {0};
+	struct hmap_row_ext *node = NULL;
+	struct hmap_row_ext *free_head = NULL;
 	uint16_t hist_num[HMAP_H] = {0};
 	uint16_t hist_sort[HMAP_H] = {0};
 
-	int rval = 0;
-	uint32_t data_num = sizeof(val_full)/sizeof(val_full[0]);
+	uint16_t *p_u16 = NULL;
+	uint32_t i = 0, j = 0, n = 0, k = 0;
+	uint32_t remain_num = 0, iteration = 1;
 
-	printf("Bit16 max: %u\n", HMAP_H);
-	printf("Load half ...\n");
+	int rval = 0;
+
+	uint32_t data_num = sizeof(val_full)/sizeof(val_full[0]);
+	half data[data_num];
+
+	if (argc == 2) {
+		iteration = atoi(argv[1]);
+		printf("Iteraction Num: %u\n", iteration);
+	}
+	printf("HMAP_H: %u, HMAP_W_NUM: %u, HMAP_W_EXT_NUM: %u, "
+		"row num: %lu, data_num: %u\n",
+		HMAP_H, HMAP_W_NUM, HMAP_W_EXT_NUM,
+		sizeof(struct hmap_row)/sizeof(uint16_t), data_num);
+
 	for (i = 0; i < data_num; i++) {
 		data[i] = (half)val_full[i];
 	}
@@ -143,22 +212,80 @@ int main(int argc, char **argv)
 	}
 	#endif
 
-	build_hist_map(hist_map, hist_num, data, data_num);
+	for (uint32_t cnt = 0; cnt < iteration; cnt++) {
+		build_hist_map(hist_map, hist_list, hist_num, data, data_num);
 
-	printf("\nshow histgram:\n");
-	for (j = 0; j < HMAP_H; j++) {
-		for (n = 0; n < hist_num[j]; n++) {
-			printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
-				hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+		#if 0
+		printf("\nshow histgram:\n");
+		for (j = 0; j < HMAP_H; j++) {
+			if (hist_num[j] <= HMAP_W_NUM) {
+				for (n = 0; n < hist_num[j]; n++) {
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
+						hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+				}
+			} else {
+				for (n = 0; n < HMAP_W_NUM; n++) {
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
+						hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+				}
+				node = hist_list[j].head;
+				if (node == NULL) {
+					printf("hist_list [%u] head is NULL\n", j);
+					break;
+				}
+
+				remain_num = hist_num[j] - HMAP_W_NUM;
+				for (n = 0, k = 0; n < remain_num; n++, k++) {
+					if (k == HMAP_W_EXT_NUM) {
+						node = node->next;
+						k = 0;
+					}
+					if (node == NULL) {
+						printf("node is NULL\n");
+						break;
+					}
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, k, hist_num[j],
+						node->index[k], (float)data[node->index[k]]);
+				}
+			}
 		}
-	}
+		#endif
 
-	printf("\nshow order (decsend):\n");
-	for (i = 0; i < HMAP_H; i++) {
-		j = hist_sort[i];
-		for (n = 0; n < hist_num[j]; n++) {
-			printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
-				hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+		printf("\nshow order (decsend):\n");
+		for (i = 0; i < HMAP_H; i++) {
+			j = hist_sort[i];
+			if (hist_num[j] <= HMAP_W_NUM) {
+				for (n = 0; n < hist_num[j]; n++) {
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
+						hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+				}
+			} else {
+				/* hist map */
+				for (n = 0; n < HMAP_W_NUM; n++) {
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, n, hist_num[j],
+						hist_map[j].index[n], (float)data[hist_map[j].index[n]]);
+				}
+
+				/* hist list */
+				node = hist_list[j].head;
+				if (node == NULL) {
+					printf("hist_list [%u] head is NULL\n", j);
+					break;
+				}
+				remain_num = hist_num[j] - HMAP_W_NUM;
+				for (n = 0, k = 0; n < remain_num; n++, k++) {
+					if (k == HMAP_W_EXT_NUM) {
+						node = node->next;
+						k = 0;
+					}
+					if (node == NULL) {
+						printf("node is NULL\n");
+						break;
+					}
+					printf("%u: num: %u/%u, data_idx: %u, data: %f\n", j, k, hist_num[j],
+						node->index[k], (float)data[node->index[k]]);
+				}
+			}
 		}
 	}
 
