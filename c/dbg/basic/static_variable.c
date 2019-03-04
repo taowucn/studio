@@ -17,7 +17,7 @@ int main (int argc, char ** argv)
   int *p = (int *)0x12345678;
 
   printf("p[%p], p+2[%p].\n", p, p+2);
-  for (i; i< 5; i++){
+  for (i = 0; i < 5; i++) {
     printf("%d\n", sum(a));
   }
   return 0;
