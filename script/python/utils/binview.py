@@ -1,38 +1,46 @@
 #!/usr/bin/env python
 
+import os, sys, argparse
 import numpy as np
-import sys
-import os
 
-argc = len(sys.argv)
-if (argc < 2):
-    print "Usage:  binview.py <input_filename> <fp32|fp16|fx32|fx16|fx8> <Row>\n"
-    exit()
+def bin_view(args):
+	if (args.f == "fp32"):
+		data = np.fromfile(args.i, np.float32)
+	elif (args.f == "fp16"):
+		data = np.fromfile(args.i, np.float16)
+	elif (args.f == "fx32"):
+		data = np.fromfile(args.i, np.int32)
+	elif (args.f == "fx16"):
+		data = np.fromfile(args.i, np.int16)
+	elif (args.f == "fx8"):
+		data = np.fromfile(args.i, np.int8)
+	else:
+		raise UserWarning("Unknown binary format: %s" % (args.f))
 
-in_file = sys.argv[1]
-data_format = sys.argv[2]
-width = 0
-if (argc == 4):
-	width = int(sys.argv[3])
+	if (args.w > 0):
+		num = data.shape[0]
+		height = num / args.w
+		data = data.reshape(height, args.w)
 
-if (data_format == "fp32"):
-    data = np.fromfile(in_file, np.float32)
-elif (data_format == "fp16"):
-    data = np.fromfile(in_file, np.float16)
-elif (data_format == "fx32"):
-	data = np.fromfile(in_file, np.int32)
-elif (data_format == "fx16"):
-	data = np.fromfile(in_file, np.int16)
-elif (data_format == "fx8"):
-	data = np.fromfile(in_file, np.int8)
-else:
-    print("Invalid data format: " + data_format)
-    exit()
+	if (args.q > 0):
+		data_f = data.astype(np.float32)
+		data_f = data_f/pow(2, args.q)
+		print(data_f)
+	else:
+		print(data)
 
-if (width != 0):
-	num = data.shape[0]
-	height = num / width
-	data = data.reshape(height, width)
+def init_param(args):
+	parser = argparse.ArgumentParser(description="View binary file with specifyed format")
+	parser.add_argument("-i", type=str, required=True, default="input.bin",
+		help="input binary filename")
+	parser.add_argument("-f", type=str, required=True, default="fp32",
+		help="input binary format: <fp32|fp16|fx32|fx16|fx8>")
+	parser.add_argument("-q", type=int, required=False,
+		help="Q value for quantized data")
+	parser.add_argument("-w", type=int, required=False,
+		help="Show element number in row (width)")
+	return parser.parse_args(args)
 
-print(data)
-
+if __name__ == '__main__':
+	args = init_param(sys.argv[1:])
+	bin_view(args)

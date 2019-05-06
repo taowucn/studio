@@ -37,7 +37,7 @@ def draw_bbox(args):
 	elif (args.f == "fx8"):
 		bbox_bin = np.fromfile(args.b, np.int8)
 	else:
-		raise UserWarning("Unknown binary format: %d" % (args.f))
+		raise UserWarning("Unknown binary format: %s" % (args.f))
 
 	bbox_num = bbox_bin.shape[0]
 	idx = 0
