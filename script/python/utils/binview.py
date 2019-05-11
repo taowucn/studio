@@ -25,9 +25,17 @@ def bin_view(args):
 	if (args.q > 0):
 		data_f = data.astype(np.float32)
 		data_f = data_f/pow(2, args.q)
-		print(data_f)
+		if (args.v):
+			for row in data_f:
+				print(row)
+		else:
+			print(data_f)
 	else:
-		print(data)
+		if (args.v):
+			for row in data:
+				print(row)
+		else:
+			print(data)
 
 def init_param(args):
 	parser = argparse.ArgumentParser(description="View binary file with specifyed format")
@@ -39,6 +47,8 @@ def init_param(args):
 		help="Q value for quantized data")
 	parser.add_argument("-w", type=int, required=False,
 		help="Show element number in row (width)")
+	parser.add_argument("-v", action='store_true', required=False,
+		help="Show data by print txt")
 	return parser.parse_args(args)
 
 if __name__ == '__main__':

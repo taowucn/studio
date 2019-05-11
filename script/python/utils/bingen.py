@@ -24,7 +24,7 @@ def bin_gen(args):
 
 	data.tofile(args.o)
 	filesize=os.path.getsize(args.o)
-	print('Gererate File: {}, Num: {}, Size: {} byte'.format(args.o, args.n, filesize))
+	print('Generate File: {}, Num: {}, Size: {} byte'.format(args.o, args.n, filesize))
 
 def init_param(args):
 	parser = argparse.ArgumentParser(description="Generate binary file with specifyed format and data")
