@@ -50,7 +50,8 @@ print ('transpose:')
 print (np.transpose(a))
 print ('T:')
 print (a.T)
-
+print ('transpose(1,0):')
+print (a.transpose(1,0))
 
 print ('\n## rollaxis ##')
 # create 3 dim ndarray
@@ -73,5 +74,8 @@ print ('\n')
 print ('swapaxes (0 <-> 2):')
 print (np.swapaxes(a, 2, 0))
 
+
+a = np.arange(12).reshape(2,2,3)
+print (a.shape[0])
 
 
