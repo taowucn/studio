@@ -6,7 +6,7 @@ import cv2
 
 def init_param(args):
 	parser = argparse.ArgumentParser(description="Draw BBox on image by "
-		"BBox binary in specified format")
+		"BBox binary in specific format")
 	parser.add_argument("-i", type=str, required=True, default="input.jpg",
 		help="input image filename")
 	parser.add_argument("-b", type=str, required=True, default="bbox.bin",

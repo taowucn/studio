@@ -27,7 +27,7 @@ def bin_gen(args):
 	print('Generate File: {}, Num: {}, Size: {} byte'.format(args.o, args.n, filesize))
 
 def init_param(args):
-	parser = argparse.ArgumentParser(description="Generate binary file with specifyed format and data")
+	parser = argparse.ArgumentParser(description="Generate binary file with specific format and data")
 	parser.add_argument("-o", type=str, required=True, default="output.bin",
 		help="ouput binary filename")
 	parser.add_argument("-f", type=str, required=True, default="fp32",

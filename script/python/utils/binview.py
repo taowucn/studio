@@ -38,7 +38,7 @@ def bin_view(args):
 			print(data)
 
 def init_param(args):
-	parser = argparse.ArgumentParser(description="View binary file with specifyed format")
+	parser = argparse.ArgumentParser(description="View binary file with specific format")
 	parser.add_argument("-i", type=str, required=True, default="input.bin",
 		help="input binary filename")
 	parser.add_argument("-f", type=str, required=True, default="fp32",
