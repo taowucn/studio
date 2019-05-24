@@ -8,7 +8,7 @@ def bin_gen(args):
 		value = np.float32(float(args.d))
 		data = np.ones(args.n, np.float32) * value
 	elif (args.f == "fp16"):
-		value = np.float16( float(args.d))
+		value = np.float16(float(args.d))
 		data = np.ones(args.n, np.float16) * value
 	elif (args.f == "fx32"):
 		value = np.int32(int(args.d))
