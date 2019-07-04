@@ -3,19 +3,10 @@
 import os, sys, argparse
 import numpy as np
 
+dtype_str = "<float64|float32|float16|uint64|int64|uint32|int32|uint16|int16|uint8|int8>"
+
 def bin_view(args):
-	if (args.f == "fp32"):
-		data = np.fromfile(args.i, np.float32)
-	elif (args.f == "fp16"):
-		data = np.fromfile(args.i, np.float16)
-	elif (args.f == "fx32"):
-		data = np.fromfile(args.i, np.int32)
-	elif (args.f == "fx16"):
-		data = np.fromfile(args.i, np.int16)
-	elif (args.f == "fx8"):
-		data = np.fromfile(args.i, np.int8)
-	else:
-		raise UserWarning("Unknown binary format: %s" % (args.f))
+	data = np.fromfile(args.i, dtype=args.f)
 
 	if (args.w > 0):
 		num = data.shape[0]
@@ -42,7 +33,7 @@ def init_param(args):
 	parser.add_argument("-i", type=str, required=True, default="input.bin",
 		help="input binary filename")
 	parser.add_argument("-f", type=str, required=True, default="fp32",
-		help="input binary format: <fp32|fp16|fx32|fx16|fx8>")
+		help="input binary format: " + dtype_str)
 	parser.add_argument("-q", type=int, required=False,
 		help="Q value for quantized data")
 	parser.add_argument("-w", type=int, required=False,
