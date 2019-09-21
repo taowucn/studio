@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 from caffe import layers as L,params as P,to_proto
-root = '/home/taowu/data/code/github/cv/caffe/caffe/' # change it in your env
-deploy = root + 'examples/mnist/deploy.prototxt'  # output filename
+deploy = 'deploy.prototxt'  # output filename
 
 def create_deploy():
     # No the first layer: data layer

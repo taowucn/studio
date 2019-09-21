@@ -5,12 +5,13 @@ import numpy as np
 import os,sys
 import argparse
 
-CAFFE_ROOT="/home/taowu/data/code/github/cv/caffe/caffe"
+CAFFE_ROOT="/home/taowu/data/vmdisk/code/github/cv/caffe/caffe"
 
 def test_lenet_mnist(argv):
-	deploy = CAFFE_ROOT + "/examples/mnist/deploy.prototxt"
 	caffe_model = CAFFE_ROOT + "/examples/mnist/lenet_iter_10000.caffemodel"
 	labels_f = "labels.txt"
+	deploy = "deploy.prototxt"
+
 	img_f = args.i
 	if (not os.path.exists(labels_f)):
 		raise UserWarning("%s not found." % (labels_f))
