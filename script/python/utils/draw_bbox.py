@@ -4,15 +4,17 @@ import os, sys, argparse
 import numpy as np
 import cv2
 
+dtype_str = "<float64|float32|float16|uint64|int64|uint32|int32|uint16|int16|uint8|int8>"
+
 def init_param(args):
 	parser = argparse.ArgumentParser(description="Draw BBox on image by "
 		"BBox binary in specific format")
 	parser.add_argument("-i", type=str, required=True, default="input.jpg",
 		help="input image filename")
 	parser.add_argument("-b", type=str, required=True, default="bbox.bin",
-		help="bbox binary filename")
+		help="bbox binary filename, <x1, y1, x2, y2>")
 	parser.add_argument("-f", type=str, required=True, default="fp32",
-		help="bbox binary format: <fp32|fp16|fx32|fx16|fx8>")
+		help="bbox binary format: " + dtype_str)
 	parser.add_argument("-o", type=str, required=False, default="output.jpg",
 		help="output image filename")
 	parser.add_argument("--verbose", action="store_true", default=False,
@@ -26,18 +28,7 @@ def draw_bbox(args):
 		raise UserWarning("BBox %s not found." % (args.b))
 
 	## Parser bbox_format
-	if (args.f == "fp32"):
-		bbox_bin = np.fromfile(args.b, np.float32)
-	elif (args.f == "fp16"):
-		bbox_bin = np.fromfile(args.b, np.float16)
-	elif (args.f == "fx32"):
-		bbox_bin = np.fromfile(args.b, np.int32)
-	elif (args.f == "fx16"):
-		bbox_bin = np.fromfile(args.b, np.int16)
-	elif (args.f == "fx8"):
-		bbox_bin = np.fromfile(args.b, np.int8)
-	else:
-		raise UserWarning("Unknown binary format: %s" % (args.f))
+	bbox_bin = np.fromfile(args.b, dtype=args.f)
 
 	bbox_num = bbox_bin.shape[0]
 	idx = 0
