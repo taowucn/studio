@@ -7,7 +7,8 @@ def transform(args):
 	data = np.fromfile(args.i, dtype=args.f)
 
 	## customize code: change reshape and transpose param
-	dst = data.reshape(2, 2, 4).transpose(1, 0, 2)
+	#dst = data.reshape(12, 2, 38, 64).transpose(1, 0, 2, 3)
+	dst = data.reshape(12, 2, 38, 50).transpose(1, 2, 3, 0)
 
 	dst.tofile(args.o)
 	print('Transpose File: {} -> {}'.format(args.i, args.o))
