@@ -145,16 +145,17 @@ int init_opt(int argc, char **argv)
 }
 
 //quit process when tpye 'q'.
-
-int loop_parm()
+int loop_parm(void)
 {
 	char buffer[256];
-	 if (read (STDIN_FILENO, buffer, sizeof (buffer)) < 0)
+	 if (read (STDIN_FILENO, buffer, sizeof (buffer)) < 0) {
 	 	return -1;
-	 else if ( buffer[0] == 'q' ){
+	 } else if ( buffer[0] == 'q' ) {
 	 	printf("Quit!\n");
 	 	return 0;
 	 }
+
+	 return 0;
 }
 
 
@@ -274,7 +275,7 @@ int main(int argc , char **argv)
 	gettimeofday(&time_point_start, NULL);
 
 	while ( 1 ){
-		if( !(loop_parm( argc, argv) ) ){
+		if (!loop_parm()) {
 			sigstop();
 			return 0;
 		}

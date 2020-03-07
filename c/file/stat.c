@@ -19,7 +19,7 @@ char*  getProtection(mode_t vProtection)
 int main(int argc, char **argv)
 {
 	struct stat s;
-	char *p;
+	//char *p;
 	if (stat ("/cygdrive/v/taowu/study/exec/execve", &s) < 0){
 		printf("get faild\n");
 		return -1;

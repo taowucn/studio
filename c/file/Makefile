@@ -18,7 +18,7 @@ $(TARGETS): %.elf : %.o
 	@echo "Build $@ Done"
 
 $(OBJS): %.o : %.c
-	@$(CC) $(CFLAGS)-c $< -o @
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 clean :
 	@rm -rf $(TARGETS) $(OBJS) core
